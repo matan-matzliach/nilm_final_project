@@ -1,0 +1,4 @@
+"name","type","length","leftDigits","rightDigits"
+"FIND_KEY","INTEGER","3","3","0"
+"HarmChannels","INTEGER","3","3","0"
+"DoubleTimeStart","INTEGER","13","13","0"
