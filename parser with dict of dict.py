@@ -77,7 +77,7 @@ def parse_all_data(dictionary):
 
 dictionary=dict()
 def get_table_titles(table):
-    return dictionary[table].keys
+    return dictionary[table].keys()
 
 def get_table_data(table):
     return dictionary[table]
