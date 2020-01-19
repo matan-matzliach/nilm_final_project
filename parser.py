@@ -1,37 +1,96 @@
 import sys
 import os
 import csv
+import numpy as np
 
-
-def csvToArray(relative_path):
+def csvToDict(relative_path):
     #converts csv file to matrix
-    table=[]
+    table=dict()
     if(not(os.path.exists(os.path.abspath(relative_path)))):
         print("ERROR, can't read: "+os.path.abspath(relative_path))
-    with open(os.path.abspath(relative_path), 'rt') as csvfile:
-        reader = csv.reader(csvfile)
-        for row in reader:
-            table.append(row)
-    csvfile.close()
+    else:
+        with open(os.path.abspath(relative_path), 'rt') as csvfile:
+            reader = csv.reader(csvfile)
+            for row in reader:
+                header=row
+                break
+            for row in reader:
+                tr=dict()
+                tr['FIND_KEY']=int(row[0])
+                tr['sequence']=int(row[1])
+                tr['DoubleTimeStart']=float(row[2]) #there is no double in python so we used float
+                tr['StringTimeStart']=row[3]
+                tr['DoubleTimeTrigg']=float(row[4]) #there is no double in python so we used float
+                tr['StringTimeTrigg']=row[5]
+                tr['SeriesNo']=int(row[6])
+                tr['RecordNo']=int(row[7])
+                tr['EvtType']=int(row[8])
+                tr['EvtSeq']=int(row[9])
+                tr['PointID']=int(row[10])
+                tr['TrigPoint']=int(row[11])
+                tr['PointsPerCycle']=int(row[12])
+                tr['PointsPerRecord']=int(row[13])
+                tr['SampleFreq']=float(row[14])
+                tr['SampleRate']=float(row[15])
+                tr['Scale']=float(row[16])
+                tr['ScaleAD']=int(row[17])
+                tr['ZeroOffs']=int(row[18])
+                tr['HWDelay']=int(row[19])
+                tr['SWDelay']=int(row[20])
+                tr['Data']=[int(i) for  i in row[21].split(",")]
+                table[int(row[0])]=tr
+        csvfile.close()
     return table
-
+def dictPower(dictionary,I,V):
+    table=dict()
+    header=dictionary[I][0].keys()
+    for row in(dictionary[I]):
+        tr=dict()
+        tr['FIND_KEY']=dictionary[I][row]['FIND_KEY']
+        tr['sequence']=dictionary[I][row]['sequence']
+        tr['DoubleTimeStart']=dictionary[I][row]['DoubleTimeStart']
+        tr['StringTimeStart']=dictionary[I][row]['StringTimeStart']
+        tr['DoubleTimeTrigg']=dictionary[I][row]['DoubleTimeTrigg']
+        tr['StringTimeTrigg']=dictionary[I][row]['StringTimeTrigg']
+        tr['SeriesNo']=dictionary[I][row]['SeriesNo']
+        tr['RecordNo']=dictionary[I][row]['RecordNo']
+        tr['EvtType']=dictionary[I][row]['EvtType']
+        tr['EvtSeq']=dictionary[I][row]['EvtSeq']
+        tr['PointID']=dictionary[I][row]['PointID']
+        tr['TrigPoint']=dictionary[I][row]['TrigPoint']
+        tr['PointsPerCycle']=dictionary[I][row]['PointsPerCycle']
+        tr['PointsPerRecord']=dictionary[I][row]['PointsPerRecord']
+        tr['SampleFreq']=dictionary[I][row]['SampleFreq']
+        tr['SampleRate']=dictionary[I][row]['SampleRate']
+        tr['Scale']=dictionary[I][row]['Scale']
+        tr['ScaleAD']=dictionary[I][row]['ScaleAD']
+        tr['ZeroOffs']=dictionary[I][row]['ZeroOffs']
+        tr['HWDelay']=dictionary[I][row]['HWDelay']
+        tr['SWDelay']=dictionary[I][row]['SWDelay']
+        tr['Data']=[dictionary[I][row]['Data'][i]*dictionary[V][row]['Data'][i] for  i in range(len(dictionary[I][row]['Data']))]
+        table[row]=tr
+    return table
 def add_tables_to_dict(prefix_str,relative_path,dictionary,mode=0):
     #since some of the tables have different names, We created mode to control what tables type to read
     if(mode==0):
-        dictionary[prefix_str+"_I1"]=csvToArray(relative_path+"\RT_I1 RT Waveform.csv")
-        dictionary[prefix_str+"_I2"]=csvToArray(relative_path+"\RT_I2 RT Waveform.csv")
-        dictionary[prefix_str+"_I3"]=csvToArray(relative_path+"\RT_I3 RT Waveform.csv")
-        dictionary[prefix_str+"_V1"]=csvToArray(relative_path+"\RT_V1 RT Waveform.csv")
-        dictionary[prefix_str+"_V2"]=csvToArray(relative_path+"\RT_V2 RT Waveform.csv")
-        dictionary[prefix_str+"_V3"]=csvToArray(relative_path+"\RT_V3 RT Waveform.csv")
+        dictionary[prefix_str+"_I1"]=csvToDict(relative_path+"\RT_I1 RT Waveform.csv")
+        dictionary[prefix_str+"_I2"]=csvToDict(relative_path+"\RT_I2 RT Waveform.csv")
+        dictionary[prefix_str+"_I3"]=csvToDict(relative_path+"\RT_I3 RT Waveform.csv")
+        dictionary[prefix_str+"_V1"]=csvToDict(relative_path+"\RT_V1 RT Waveform.csv")
+        dictionary[prefix_str+"_V2"]=csvToDict(relative_path+"\RT_V2 RT Waveform.csv")
+        dictionary[prefix_str+"_V3"]=csvToDict(relative_path+"\RT_V3 RT Waveform.csv")
     else:
-        dictionary[prefix_str+"_I1"]=csvToArray(relative_path+"\RT_I1_RT_Waveform.csv")
-        dictionary[prefix_str+"_I2"]=csvToArray(relative_path+"\RT_I2_RT_Waveform.csv")
-        dictionary[prefix_str+"_I3"]=csvToArray(relative_path+"\RT_I3_RT_Waveform.csv")
-        dictionary[prefix_str+"_V1"]=csvToArray(relative_path+"\RT_V1_RT_Waveform.csv")
-        dictionary[prefix_str+"_V2"]=csvToArray(relative_path+"\RT_V2_RT_Waveform.csv")
-        dictionary[prefix_str+"_V3"]=csvToArray(relative_path+"\RT_V3_RT_Waveform.csv")
-
+        dictionary[prefix_str+"_I1"]=csvToDict(relative_path+"\RT_I1_RT_Waveform.csv")
+        dictionary[prefix_str+"_I2"]=csvToDict(relative_path+"\RT_I2_RT_Waveform.csv")
+        dictionary[prefix_str+"_I3"]=csvToDict(relative_path+"\RT_I3_RT_Waveform.csv")
+        dictionary[prefix_str+"_V1"]=csvToDict(relative_path+"\RT_V1_RT_Waveform.csv")
+        dictionary[prefix_str+"_V2"]=csvToDict(relative_path+"\RT_V2_RT_Waveform.csv")
+        dictionary[prefix_str+"_V3"]=csvToDict(relative_path+"\RT_V3_RT_Waveform.csv")
+    ###POWER
+    dictionary[prefix_str+"_P1"]=dictPower(dictionary,prefix_str+"_I1",prefix_str+"_V1")
+    dictionary[prefix_str+"_P2"]=dictPower(dictionary,prefix_str+"_I2",prefix_str+"_V2")
+    dictionary[prefix_str+"_P3"]=dictPower(dictionary,prefix_str+"_I3",prefix_str+"_V3")
+    prefixlist.append(prefix_str)
 
 
 def parse_all_data(dictionary):
@@ -68,31 +127,105 @@ def parse_all_data(dictionary):
     add_tables_to_dict("s4_onelightAndAircondi","./forthSession/onelightAndAircondi/high/output",dictionary)
     add_tables_to_dict("s4_twolightandAirco","./forthSession/twolightandAirco/high/output",dictionary,1)
 
+def diff_all_data(dictionary,difdictionary,prefixlist):
+    for i in range(len(prefixlist)):
+        for j in prefixlist[i:]:
+            print(prefixlist[i]+" and "+j)
+            index1,index2=sync_voltage(prefixlist[i]+"_V1",j+"_V1",64)
+            difdictionary[prefixlist[i]+"_V1 and "+j+"_V1"]=find_difference_between_Data_in_tabels(prefixlist[i]+"_V1",j+"_V1",64,index1,index2)
+            sumdictionary[prefixlist[i]+"_V1 and "+j+"_V1"]=find_sum_of_Data_in_tabels(prefixlist[i]+"_V1",j+"_V1",64,index1,index2)
+            difdictionary[prefixlist[i]+"_I1 and "+j+"_I1"]=find_difference_between_Data_in_tabels(prefixlist[i]+"_I1",j+"_I1",64,index1,index2)
+            sumdictionary[prefixlist[i]+"_I1 and "+j+"_I1"]=find_sum_of_Data_in_tabels(prefixlist[i]+"_I1",j+"_I1",64,index1,index2)
+            difdictionary[prefixlist[i]+"_P1 and "+j+"_P1"]=find_difference_between_Data_in_tabels(prefixlist[i]+"_P1",j+"_P1",64,index1,index2)
+            sumdictionary[prefixlist[i]+"_P1 and "+j+"_P1"]=find_sum_of_Data_in_tabels(prefixlist[i]+"_P1",j+"_P1",64,index1,index2)
+            index1,index2=sync_voltage(prefixlist[i]+"_V1",j+"_V2",64)
+            difdictionary[prefixlist[i]+"_V1 and "+j+"_V2"]=find_difference_between_Data_in_tabels(prefixlist[i]+"_V1",j+"_V2",64,index1,index2)
+            sumdictionary[prefixlist[i]+"_V1 and "+j+"_V2"]=find_sum_of_Data_in_tabels(prefixlist[i]+"_V1",j+"_V2",64,index1,index2)
+            difdictionary[prefixlist[i]+"_I1 and "+j+"_I2"]=find_difference_between_Data_in_tabels(prefixlist[i]+"_I1",j+"_I2",64,index1,index2)
+            sumdictionary[prefixlist[i]+"_I1 and "+j+"_I2"]=find_sum_of_Data_in_tabels(prefixlist[i]+"_I1",j+"_I2",64,index1,index2)
+            difdictionary[prefixlist[i]+"_P1 and "+j+"_P2"]=find_difference_between_Data_in_tabels(prefixlist[i]+"_P1",j+"_P2",64,index1,index2)
+            sumdictionary[prefixlist[i]+"_P1 and "+j+"_P2"]=find_sum_of_Data_in_tabels(prefixlist[i]+"_P1",j+"_P2",64,index1,index2)
+            index1,index2=sync_voltage(prefixlist[i]+"_V1",j+"_V3",64)
+            difdictionary[prefixlist[i]+"_V1 and "+j+"_V3"]=find_difference_between_Data_in_tabels(prefixlist[i]+"_V1",j+"_V3",64,index1,index2)
+            sumdictionary[prefixlist[i]+"_V1 and "+j+"_V3"]=find_sum_of_Data_in_tabels(prefixlist[i]+"_V1",j+"_V3",64,index1,index2)
+            difdictionary[prefixlist[i]+"_I1 and "+j+"_I3"]=find_difference_between_Data_in_tabels(prefixlist[i]+"_I1",j+"_I3",64,index1,index2)
+            sumdictionary[prefixlist[i]+"_I1 and "+j+"_I3"]=find_sum_of_Data_in_tabels(prefixlist[i]+"_I1",j+"_I3",64,index1,index2)
+            difdictionary[prefixlist[i]+"_P1 and "+j+"_P3"]=find_difference_between_Data_in_tabels(prefixlist[i]+"_P1",j+"_P3",64,index1,index2)
+            sumdictionary[prefixlist[i]+"_P1 and "+j+"_P3"]=find_sum_of_Data_in_tabels(prefixlist[i]+"_P1",j+"_P3",64,index1,index2)
+            index1,index2=sync_voltage(prefixlist[i]+"_V2",j+"_V2",64)
+            difdictionary[prefixlist[i]+"_V2 and "+j+"_V2"]=find_difference_between_Data_in_tabels(prefixlist[i]+"_V2",j+"_V2",64,index1,index2)
+            sumdictionary[prefixlist[i]+"_V2 and "+j+"_V2"]=find_sum_of_Data_in_tabels(prefixlist[i]+"_V2",j+"_V2",64,index1,index2)
+            difdictionary[prefixlist[i]+"_I2 and "+j+"_I2"]=find_difference_between_Data_in_tabels(prefixlist[i]+"_I2",j+"_I2",64,index1,index2)
+            sumdictionary[prefixlist[i]+"_I2 and "+j+"_I2"]=find_sum_of_Data_in_tabels(prefixlist[i]+"_I2",j+"_I2",64,index1,index2)
+            difdictionary[prefixlist[i]+"_P2 and "+j+"_P2"]=find_difference_between_Data_in_tabels(prefixlist[i]+"_P2",j+"_P2",64,index1,index2)
+            sumdictionary[prefixlist[i]+"_P2 and "+j+"_P2"]=find_sum_of_Data_in_tabels(prefixlist[i]+"_P2",j+"_P2",64,index1,index2)
+            index1,index2=sync_voltage(prefixlist[i]+"_V2",j+"_V3",64)
+            difdictionary[prefixlist[i]+"_V2 and "+j+"_V3"]=find_difference_between_Data_in_tabels(prefixlist[i]+"_V2",j+"_V3",64,index1,index2)
+            sumdictionary[prefixlist[i]+"_V2 and "+j+"_V3"]=find_sum_of_Data_in_tabels(prefixlist[i]+"_V2",j+"_V3",64,index1,index2)
+            difdictionary[prefixlist[i]+"_I2 and "+j+"_I3"]=find_difference_between_Data_in_tabels(prefixlist[i]+"_I2",j+"_I3",64,index1,index2)
+            sumdictionary[prefixlist[i]+"_I2 and "+j+"_I3"]=find_sum_of_Data_in_tabels(prefixlist[i]+"_I2",j+"_I3",64,index1,index2)
+            difdictionary[prefixlist[i]+"_P2 and "+j+"_P3"]=find_difference_between_Data_in_tabels(prefixlist[i]+"_P2",j+"_P3",64,index1,index2)
+            sumdictionary[prefixlist[i]+"_P2 and "+j+"_P3"]=find_sum_of_Data_in_tabels(prefixlist[i]+"_P2",j+"_P3",64,index1,index2)
+            index1,index2=sync_voltage(prefixlist[i]+"_V3",j+"_V3",64)
+            difdictionary[prefixlist[i]+"_V3 and "+j+"_V3"]=find_difference_between_Data_in_tabels(prefixlist[i]+"_V3",j+"_V3",64,index1,index2)
+            sumdictionary[prefixlist[i]+"_V3 and "+j+"_V3"]=find_sum_of_Data_in_tabels(prefixlist[i]+"_V3",j+"_V3",64,index1,index2)
+            difdictionary[prefixlist[i]+"_I3 and "+j+"_I3"]=find_difference_between_Data_in_tabels(prefixlist[i]+"_I3",j+"_I3",64,index1,index2)
+            sumdictionary[prefixlist[i]+"_I3 and "+j+"_I3"]=find_sum_of_Data_in_tabels(prefixlist[i]+"_I3",j+"_I3",64,index1,index2)
+            difdictionary[prefixlist[i]+"_P3 and "+j+"_P3"]=find_difference_between_Data_in_tabels(prefixlist[i]+"_P3",j+"_P3",64,index1,index2)
+            sumdictionary[prefixlist[i]+"_P3 and "+j+"_P3"]=find_sum_of_Data_in_tabels(prefixlist[i]+"_P3",j+"_P3",64,index1,index2)
+            
+        
 
 dictionary=dict()
+prefixlist=[]
+difdictionary=dict()
+sumdictionary=dict()
 def get_table_titles(table):
-    return dictionary[table][0]
+    return dictionary[table][0].keys()
 
 def get_table_data(table):
-    return dictionary[table][1:]
+    return dictionary[table]
 
+def find_difference_between_Data_in_tabels(table1,table2,num_of_samples,index1,index2):#num_of_samples<=64
+    l=[]
+    adjusted_row1=dictionary[table1][0]['Data'][index1:index1+num_of_samples]
+    adjusted_row2=dictionary[table2][0]['Data'][index2:index2+num_of_samples]
+    for i in range(num_of_samples):
+        l.append(adjusted_row1[i]-adjusted_row2[i])
+    return l
+def find_sum_of_Data_in_tabels(table1,table2,num_of_samples,index1,index2):#num_of_samples<=64
+    l=[]
+    adjusted_row1=dictionary[table1][0]['Data'][index1:index1+num_of_samples]
+    adjusted_row2=dictionary[table2][0]['Data'][index2:index2+num_of_samples]
+    for i in range(num_of_samples):
+        l.append(adjusted_row1[i]+adjusted_row2[i])
+    return l
+
+
+def mean_square(l1,l2,num_of_samples):
+    return sum([(l1[i]-l2[i])**2 for i in range(num_of_samples)])/num_of_samples
+def sync_voltage(table1,table2,num_of_samples):#num_of_samples will be between 1 and 64
+    #we used the fact that a cycle is 64 samples because the sample rate is 50HZ and we can see from the tables that it is close to that value for each sampling
+    l=[]
+    minimum=np.inf
+    index=(0,0)
+    for i in range(64): 
+        for j in range(128):#we will go over 2 cycles
+            x=mean_square(dictionary[table1][0]['Data'][i:i+num_of_samples],dictionary[table2][0]['Data'][j:j+num_of_samples],num_of_samples)
+            if x<minimum:
+                    minimum=x
+                    indexes=(i,j)
+    return indexes
+    
+    
 if __name__ == "__main__":
     
     
     
     parse_all_data(dictionary)
+    diff_all_data(dictionary,difdictionary,prefixlist)
     print(get_table_titles("s1_alloff_I1")) #this is how you get the titles
     
-   # print(get_table_data("s1_alloff_I1")) #this is how you get the data
-    
-    
-    
-    
-    
-
-    
+    #print(get_table_data("s1_alloff_I1")) #this is how you get the data
 
 
-
-
-    
