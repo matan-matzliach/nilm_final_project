@@ -262,16 +262,20 @@ def graph_8_cycles(table_sample):
     t=[i*(8/50)/len(meas) for i in range(len(meas))]
     plt.plot(t,meas)
     plt.show()
+def graph_8_cycles(table_sample):
+    t=[i*(8/50)/len(table_sample) for i in range(len(table_sample))]
+    plt.plot(t,table_sample)
+    plt.show()
     
 if __name__ == "__main__":
     
     
     
     parse_all_data(dictionary)
-    #diff_all_data(dictionary,difdictionary,prefixlist)
+    diff_all_data(dictionary,difdictionary,prefixlist)
     print(get_table_data("s1_alloff_I1")[3]) #this is how you get the titles
-    graph_8_cycles(get_table_data("s1_alloff_V1")[3])
-    graph_8_cycles(get_table_data("s1_alloff_I1")[3])
+    #graph_8_cycles(get_table_data("s1_alloff_V1")[3])
+    #graph_8_cycles(get_table_data("s1_alloff_I1")[3])
+    #graph_8_cycles_dif_sum(difdictionary["s1_alloff_V1 - s2_alloff_V1"]*8)
+    #graph_8_cycles_dif_sum(sumdictionary["s1_alloff_I1 + s2_alloff_I1"]*8)
     #print(get_table_data("s1_alloff_I1")) #this is how you get the data
-
-
