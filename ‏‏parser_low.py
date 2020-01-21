@@ -211,8 +211,10 @@ if __name__ == "__main__":
     
     
     parse_all_data(dictionary)
-    #diff_all_data(dictionary,difdictionary,prefixlist)
-    print(dictionary["s3_alloff_output1_table1"]["kW"]) #this is how you get the titles
+    print(dictionary.keys())
+    print(dictionary["s4_airconditionAndkettleandlight_output2_table1"]["kW"])
+    print(dictionary["s4_airconditionAndkettleandlight_output2_table1"]["kvar"])
+    print((dictionary["s4_airconditionAndkettleandlight_output2_table1"]["kW"][3]*1000)/dictionary["s4_airconditionAndkettleandlight_output2_table1"]["I2 Mag"][3]) #this is how you get the titles
     
     #print(get_table_data("s1_alloff_I1")) #this is how you get the data
 
