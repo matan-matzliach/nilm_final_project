@@ -6,6 +6,7 @@ import numpy as np
 def csvToDict(relative_path):
     #converts csv file to matrix
     table=dict()
+    num_to_header=dict()
     if(not(os.path.exists(os.path.abspath(relative_path)))):
         print("ERROR, can't read: "+os.path.abspath(relative_path))
     else:
@@ -14,118 +15,69 @@ def csvToDict(relative_path):
             for row in reader:
                 header=row
                 break
+            i=0
+            for head in header:
+                table[head]=list()
+                num_to_header[i]=str(head)
+                i+=1
             for row in reader:
-                tr=dict()
-                tr['FIND_KEY']=int(row[0])
-                tr['sequence']=int(row[1])
-                tr['DoubleTimeStart']=float(row[2]) #there is no double in python so we used float
-                tr['StringTimeStart']=row[3]
-                tr['DoubleTimeTrigg']=float(row[4]) #there is no double in python so we used float
-                tr['StringTimeTrigg']=row[5]
-                tr['SeriesNo']=int(row[6])
-                tr['RecordNo']=int(row[7])
-                tr['EvtType']=int(row[8])
-                tr['EvtSeq']=int(row[9])
-                tr['PointID']=int(row[10])
-                tr['TrigPoint']=int(row[11])
-                tr['PointsPerCycle']=int(row[12])
-                tr['PointsPerRecord']=int(row[13])
-                tr['SampleFreq']=float(row[14])
-                tr['SampleRate']=float(row[15])
-                tr['Scale']=float(row[16])
-                tr['ScaleAD']=int(row[17])
-                tr['ZeroOffs']=int(row[18])
-                tr['HWDelay']=int(row[19])
-                tr['SWDelay']=int(row[20])
-                tr['Data']=[int(i) for  i in row[21].split(",")]
-                table[int(row[0])]=tr
+                for i in range(len(row)):
+                    if(num_to_header[i]=="StringTime"):
+                        table[num_to_header[i]].append(str(row[i]))
+                    else:
+                        if(str(row[i])==""):
+                            table[num_to_header[i]].append(0.0) #appears in ./forthSession/aircoditionMW/low/output2/table2.csv
+                        else:
+                            table[num_to_header[i]].append(float(row[i]))
         csvfile.close()
     return table
-def dictPower(dictionary,I,V):
-    table=dict()
-    header=dictionary[I][0].keys()
-    for row in(dictionary[I]):
-        tr=dict()
-        tr['FIND_KEY']=dictionary[I][row]['FIND_KEY']
-        tr['sequence']=dictionary[I][row]['sequence']
-        tr['DoubleTimeStart']=dictionary[I][row]['DoubleTimeStart']
-        tr['StringTimeStart']=dictionary[I][row]['StringTimeStart']
-        tr['DoubleTimeTrigg']=dictionary[I][row]['DoubleTimeTrigg']
-        tr['StringTimeTrigg']=dictionary[I][row]['StringTimeTrigg']
-        tr['SeriesNo']=dictionary[I][row]['SeriesNo']
-        tr['RecordNo']=dictionary[I][row]['RecordNo']
-        tr['EvtType']=dictionary[I][row]['EvtType']
-        tr['EvtSeq']=dictionary[I][row]['EvtSeq']
-        tr['PointID']=dictionary[I][row]['PointID']
-        tr['TrigPoint']=dictionary[I][row]['TrigPoint']
-        tr['PointsPerCycle']=dictionary[I][row]['PointsPerCycle']
-        tr['PointsPerRecord']=dictionary[I][row]['PointsPerRecord']
-        tr['SampleFreq']=dictionary[I][row]['SampleFreq']
-        tr['SampleRate']=dictionary[I][row]['SampleRate']
-        tr['Scale']=dictionary[I][row]['Scale']
-        tr['ScaleAD']=dictionary[I][row]['ScaleAD']
-        tr['ZeroOffs']=dictionary[I][row]['ZeroOffs']
-        tr['HWDelay']=dictionary[I][row]['HWDelay']
-        tr['SWDelay']=dictionary[I][row]['SWDelay']
-        tr['Data']=[dictionary[I][row]['Data'][i]*dictionary[V][row]['Data'][i] for  i in range(len(dictionary[I][row]['Data']))]
-        table[row]=tr
-    return table
-def add_tables_to_dict(prefix_str,relative_path,dictionary,mode=0):
-    #since some of the tables have different names, We created mode to control what tables type to read
-    if(mode==0):
-        dictionary[prefix_str+"_I1"]=csvToDict(relative_path+"\RT_I1 RT Waveform.csv")
-        dictionary[prefix_str+"_I2"]=csvToDict(relative_path+"\RT_I2 RT Waveform.csv")
-        dictionary[prefix_str+"_I3"]=csvToDict(relative_path+"\RT_I3 RT Waveform.csv")
-        dictionary[prefix_str+"_V1"]=csvToDict(relative_path+"\RT_V1 RT Waveform.csv")
-        dictionary[prefix_str+"_V2"]=csvToDict(relative_path+"\RT_V2 RT Waveform.csv")
-        dictionary[prefix_str+"_V3"]=csvToDict(relative_path+"\RT_V3 RT Waveform.csv")
-    else:
-        dictionary[prefix_str+"_I1"]=csvToDict(relative_path+"\RT_I1_RT_Waveform.csv")
-        dictionary[prefix_str+"_I2"]=csvToDict(relative_path+"\RT_I2_RT_Waveform.csv")
-        dictionary[prefix_str+"_I3"]=csvToDict(relative_path+"\RT_I3_RT_Waveform.csv")
-        dictionary[prefix_str+"_V1"]=csvToDict(relative_path+"\RT_V1_RT_Waveform.csv")
-        dictionary[prefix_str+"_V2"]=csvToDict(relative_path+"\RT_V2_RT_Waveform.csv")
-        dictionary[prefix_str+"_V3"]=csvToDict(relative_path+"\RT_V3_RT_Waveform.csv")
-    ###POWER
-    dictionary[prefix_str+"_P1"]=dictPower(dictionary,prefix_str+"_I1",prefix_str+"_V1")
-    dictionary[prefix_str+"_P2"]=dictPower(dictionary,prefix_str+"_I2",prefix_str+"_V2")
-    dictionary[prefix_str+"_P3"]=dictPower(dictionary,prefix_str+"_I3",prefix_str+"_V3")
+
+
+def add_tables_to_dict(prefix_str,relative_path,dictionary):
+    output_arr=["1","2","3"]
+    table_arr=["1","2","3","4"]
+    for output in output_arr:
+        for table in table_arr:
+            if((os.path.exists(os.path.abspath(relative_path+output+"/table"+table+".csv")))):
+                dictionary[prefix_str+"_output"+output+"_table"+table]=csvToDict(relative_path+output+"/table"+table+".csv")
+            
+    
     prefixlist.append(prefix_str)
 
 
 def parse_all_data(dictionary):
     #first_session
-    add_tables_to_dict("s1_alloff","./firstSession/alloff/high/output",dictionary)
-    add_tables_to_dict("s1_alloffwithairconditionoutsideofbsharasroom","./firstSession/alloffwithairconditionoutsideofbsharasroom/high/output",dictionary)
-    add_tables_to_dict("s1_allofwithbsharasaircondition","./firstSession/allofwithbsharasaircondition/high/output",dictionary)
-    add_tables_to_dict("s1_bsharamorning","./firstSession/bsharamorning/high/output",dictionary)
-    add_tables_to_dict("s1_twolight","./firstSession/twolight/high/output",dictionary)
+    add_tables_to_dict("s1_alloff","./firstSession/alloff/low/output",dictionary)
+    add_tables_to_dict("s1_alloffwithairconditionoutsideofbsharasroom","./firstSession/alloffwithairconditionoutsideofbsharasroom/low/output",dictionary)
+    add_tables_to_dict("s1_allofwithbsharasaircondition","./firstSession/allofwithbsharasaircondition/low/output",dictionary)
+    add_tables_to_dict("s1_bsharamorning","./firstSession/bsharamorning/low/output",dictionary)
+    add_tables_to_dict("s1_twolight","./firstSession/twolight/low/output",dictionary)
     #second_session
-    add_tables_to_dict("s2_alllights","./secondSession/alllights/high/output",dictionary,1)
-    add_tables_to_dict("s2_alloff","./secondSession/alloff/high/output",dictionary,1)
-    add_tables_to_dict("s2_kettle","./secondSession/kettle/high/output",dictionary)
-    add_tables_to_dict("s2_mw","./secondSession/mw/high/output",dictionary)
-    add_tables_to_dict("s2_runninglabwithbasharaaircondition","./secondSession/runninglabwithbasharaaircondition/high/output",dictionary)
+    add_tables_to_dict("s2_alllights","./secondSession/alllights/low/output",dictionary)
+    add_tables_to_dict("s2_alloff","./secondSession/alloff/low/output",dictionary)
+    add_tables_to_dict("s2_kettle","./secondSession/kettle/low/output",dictionary)
+    add_tables_to_dict("s2_mw","./secondSession/mw/low/output",dictionary)
+    add_tables_to_dict("s2_runninglabwithbasharaaircondition","./secondSession/runninglabwithbasharaaircondition/low/output",dictionary)
     #third_session
-    add_tables_to_dict("s3_alloff","./thirdSession/alloff/high/output",dictionary,1)
-    add_tables_to_dict("s3_alloffAirConditiokettle","./thirdSession/alloffAirConditiokettle/high/output",dictionary)
-    add_tables_to_dict("s3_alloffairconditiononelight","./thirdSession/alloffairconditiononelight/high/output",dictionary,1)
-    add_tables_to_dict("s3_alloffwithairconditionTwoLight","./thirdSession/alloffwithairconditionTwoLight/high/output",dictionary,1)
-    add_tables_to_dict("s3_alloffwithairconditioOutsideBasharaRoom","./thirdSession/alloffwithairconditioOutsideBasharaRoom/high/output",dictionary,1)
-    add_tables_to_dict("s3_alloffwithkettle","./thirdSession/alloffwithkettle/high/output",dictionary)
-    add_tables_to_dict("s3_onelight","./thirdSession/onelight/high/output",dictionary)
-    add_tables_to_dict("s3_secondlight","./thirdSession/secondlight/high/output",dictionary)
+    add_tables_to_dict("s3_alloff","./thirdSession/alloff/low/output",dictionary)
+    add_tables_to_dict("s3_alloffAirConditiokettle","./thirdSession/alloffAirConditiokettle/low/output",dictionary)
+    add_tables_to_dict("s3_alloffairconditiononelight","./thirdSession/alloffairconditiononelight/low/output",dictionary)
+    add_tables_to_dict("s3_alloffwithairconditionTwoLight","./thirdSession/alloffwithairconditionTwoLight/low/output",dictionary)
+    add_tables_to_dict("s3_alloffwithairconditioOutsideBasharaRoom","./thirdSession/alloffwithairconditioOutsideBasharaRoom/low/output",dictionary)
+    add_tables_to_dict("s3_alloffwithkettle","./thirdSession/alloffwithkettle/low/output",dictionary)
+    add_tables_to_dict("s3_onelight","./thirdSession/onelight/low/output",dictionary)
+    add_tables_to_dict("s3_secondlight","./thirdSession/secondlight/low/output",dictionary)
     #forth_session
-    add_tables_to_dict("s4_2bashsarsComputers","./forthSession/2bashsarsComputers/highfreq/output",dictionary)
-    add_tables_to_dict("s4_aircoditionMW","./forthSession/aircoditionMW/high/output",dictionary)
-    add_tables_to_dict("s4_airconditionAndkettleandlight","./forthSession/airconditionAndkettleandlight/high/output",dictionary)
-    add_tables_to_dict("s4_alloff","./forthSession/alloff/high/output",dictionary)
-    add_tables_to_dict("s4_alloffAircon","./forthSession/alloffAircon/high/output",dictionary,1)
-    add_tables_to_dict("s4_alloffonelight","./forthSession/alloffonelight/high/output",dictionary)
-    add_tables_to_dict("s4_kettelandlight","./forthSession/kettelandlight/high/output",dictionary)
-    add_tables_to_dict("s4_mw","./forthSession/mw/high/output",dictionary)
-    add_tables_to_dict("s4_onelightAndAircondi","./forthSession/onelightAndAircondi/high/output",dictionary)
-    add_tables_to_dict("s4_twolightandAirco","./forthSession/twolightandAirco/high/output",dictionary,1)
+    add_tables_to_dict("s4_2bashsarsComputers","./forthSession/2bashsarsComputers/lowfreq/output",dictionary)
+    add_tables_to_dict("s4_aircoditionMW","./forthSession/aircoditionMW/low/output",dictionary)
+    add_tables_to_dict("s4_airconditionAndkettleandlight","./forthSession/airconditionAndkettleandlight/low/output",dictionary)
+    add_tables_to_dict("s4_alloff","./forthSession/alloff/low/output",dictionary)
+    add_tables_to_dict("s4_alloffAircon","./forthSession/alloffAircon/low/output",dictionary)
+    add_tables_to_dict("s4_alloffonelight","./forthSession/alloffonelight/low/output",dictionary)
+    add_tables_to_dict("s4_kettelandlight","./forthSession/kettelandlight/low/output",dictionary)
+    add_tables_to_dict("s4_mw","./forthSession/mw/low/output",dictionary)
+    add_tables_to_dict("s4_onelightAndAircondi","./forthSession/onelightAndAircondi/low/output",dictionary)
+    add_tables_to_dict("s4_twolightandAirco","./forthSession/twolightandAirco/low/output",dictionary)
 
 def diff_all_data(dictionary,difdictionary,prefixlist):
     for i in range(len(prefixlist)):
@@ -259,8 +211,8 @@ if __name__ == "__main__":
     
     
     parse_all_data(dictionary)
-    diff_all_data(dictionary,difdictionary,prefixlist)
-    print(get_table_titles("s1_alloff_I1")) #this is how you get the titles
+    #diff_all_data(dictionary,difdictionary,prefixlist)
+    print(dictionary["s3_alloff_output1_table1"]["kW"]) #this is how you get the titles
     
     #print(get_table_data("s1_alloff_I1")) #this is how you get the data
 
