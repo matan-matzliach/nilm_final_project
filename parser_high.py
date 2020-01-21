@@ -262,7 +262,7 @@ def graph_8_cycles(table_sample):
     t=[i*(8/50)/len(meas) for i in range(len(meas))]
     plt.plot(t,meas)
     plt.show()
-def graph_8_cycles(table_sample):
+def graph_8_cycles_dif_sum(table_sample):
     t=[i*(8/50)/len(table_sample) for i in range(len(table_sample))]
     plt.plot(t,table_sample)
     plt.show()
