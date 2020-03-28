@@ -2,6 +2,7 @@ import sys
 import os
 import csv
 import numpy as np
+import matplotlib.pyplot as plt
 
 def csvToDict(relative_path):
     #converts csv file to matrix
@@ -207,15 +208,47 @@ def sync_voltage(table1,table2,num_of_samples):#num_of_samples will be between 1
                     indexes=(i,j)
     return indexes
     
+
+def plot_power_graph(tableName):
+    plt.title("power graph: "+tableName)
+    plt.plot(dictionary[tableName]["kW"],label="kW")
+    plt.plot(dictionary[tableName]["kvar"],label="kvar")
+    plt.legend()
+    plt.show()
     
+def plot_power_graph_spectrum(tableName):
+    plt.title("power graph spectrum: "+tableName)
+    plt.yscale('log')
+    #print(np.abs(np.fft.fft(dictionary[tableName]["kW"]))[0])
+    plt.plot(np.abs(np.fft.fft(dictionary[tableName]["kW"])),label="kW")
+    plt.plot(np.abs(np.fft.fft(dictionary[tableName]["kvar"])),label="kvar")
+    plt.legend()
+    plt.show()
+
+  
 if __name__ == "__main__":
     
     
     
     parse_all_data(dictionary)
-    #print(dictionary.keys())
-    print(dictionary["s4_airconditionAndkettleandlight_output2_table1"]["kW"])
-    #print(dictionary["s4_airconditionAndkettleandlight_output2_table1"]["kvar"])
+    print(dictionary.keys())
+    #print(dictionary["s4_airconditionAndkettleandlight_output2_table1"]["kW"])
+    #print(dictionary["s4_aircoditionMW_output2_table1"]["kW"])
+    #print([dictionary["s4_aircoditionMW_output2_table1"]["DoubleTime"][i+1]-dictionary["s4_aircoditionMW_output2_table1"]["DoubleTime"][i] for i in range(-1+len(dictionary["s4_aircoditionMW_output2_table1"]["kW"]))])
+    #plot_power_graph("s3_alloffwithairconditioOutsideBasharaRoom_output3_table1")
+    #plot_power_graph("s4_airconditionAndkettleandlight_output2_table1")
+    #plot_power_graph_spectrum("s4_airconditionAndkettleandlight_output2_table1")
+    
+    
+    for tablename in dictionary.keys():
+         plot_power_graph(tablename)
+    
+    
+    #plot_power_graph("s3_alloffwithairconditioOutsideBasharaRoom_output3_table1")
+    #plot_power_graph_spectrum("s3_alloffwithairconditioOutsideBasharaRoom_output3_table1")
+    #print(dictionary["s4_aircoditionMW_output2_table2"]["kW"])
+    #print(dictionary["s4_aircoditionMW_output2_table3"]["kW"])
+    #print(dictionary["s4_aircoditionMW_output2_table4"]["kW"])
     #print((dictionary["s4_airconditionAndkettleandlight_output2_table1"]["kW"][3]*1000)/dictionary["s4_airconditionAndkettleandlight_output2_table1"]["I2 Mag"][3]) #this is how you get the titles
     
     #print(get_table_data("s1_alloff_I1")) #this is how you get the data
