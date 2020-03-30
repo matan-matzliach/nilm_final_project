@@ -3,6 +3,7 @@ import os
 import csv
 import numpy as np
 import matplotlib.pyplot as plt
+import math
 
 def csvToDict(relative_path):
     #converts csv file to matrix
@@ -214,24 +215,46 @@ def plot_power_graph(tableName):
     plt.plot(dictionary[tableName]["kW"],label="kW")
     plt.plot(dictionary[tableName]["kvar"],label="kvar")
     plt.legend()
+    plt.savefig("plots/time/"+tableName+".png", format="png")
     plt.show()
     
 def plot_power_graph_spectrum(tableName):
     plt.title("power graph spectrum: "+tableName)
     plt.yscale('log')
     #print(np.abs(np.fft.fft(dictionary[tableName]["kW"]))[0])
-    plt.plot(np.abs(np.fft.fft(dictionary[tableName]["kW"])),label="kW")
-    plt.plot(np.abs(np.fft.fft(dictionary[tableName]["kvar"])),label="kvar")
+    plt.plot(dft_vector(dictionary[tableName]["kW"]),label="kW")
+    plt.plot(dft_vector(dictionary[tableName]["kvar"]),label="kvar")
     plt.legend()
+    
+    plt.savefig("plots/spectrum/"+tableName+".png", format="png")
     plt.show()
 
-  
+
+def dft_vector(vector):
+    return np.abs(np.fft.fft(vector))
+
+def l1_distance(v1,v2):
+    return sum([abs(v1[i]-v2[i]) for i in range(min(len(v1),len(v2)))])
+
+def l2_distance(v1,v2):
+    return sum([math.pow(v1[i]-v2[i],2) for i in range(min(len(v1),len(v2)))])**0.5
+ 
+def diff_l2based(table1,table2):
+      return l2_distance(dft_vector(table1),dft_vector(table2))
+def diff_l1based(table1,table2):
+      return l1_distance(dft_vector(table1),dft_vector(table2))
+    
 if __name__ == "__main__":
     
     
     
     parse_all_data(dictionary)
-    print(dictionary.keys())
+    tables_list=list(dictionary.keys()) #names of all the tables
+    print(tables_list)
+    for i in range(len(tables_list)):
+        print(str(i)+"   "+tables_list[i])
+        
+        
     #print(dictionary["s4_airconditionAndkettleandlight_output2_table1"]["kW"])
     #print(dictionary["s4_aircoditionMW_output2_table1"]["kW"])
     #print([dictionary["s4_aircoditionMW_output2_table1"]["DoubleTime"][i+1]-dictionary["s4_aircoditionMW_output2_table1"]["DoubleTime"][i] for i in range(-1+len(dictionary["s4_aircoditionMW_output2_table1"]["kW"]))])
@@ -240,9 +263,39 @@ if __name__ == "__main__":
     #plot_power_graph_spectrum("s4_airconditionAndkettleandlight_output2_table1")
     
     
-    for tablename in dictionary.keys():
-         plot_power_graph(tablename)
+    #for tablename in dictionary.keys():
+    #     plot_power_graph(tablename)
+    #for tablename in dictionary.keys():
+    #     plot_power_graph_spectrum(tablename)
     
+    base_tables=[tables_list[i] for i in [0,3,4,7,10,13,14,15,16,18,22,23,26,29,31,33,35,36]]
+    
+    for table1 in tables_list:
+        if (table1 in base_tables):
+            continue #not important
+        else:
+            best_loss=10000000
+            closest_table=""
+            for table2 in base_tables:
+                loss=diff_l2based((dictionary[table1]["kW"]),(dictionary[table2]["kW"]))
+                #print(table2,loss)
+                if(loss<best_loss):
+                    best_loss=loss
+                    closest_table=table2
+            print(table1,"-----",closest_table,"-----",best_loss)
+    
+    
+    
+    
+    '''for i in range(len(tables_list)-1):  
+        if(len(dictionary[tables_list[i]]["kvar"])<200):
+            #print(str(tables_list[i])+ "is too short "+str(len(dictionary[tables_list[i]]["kvar"])))
+            continue
+        loss=diff_l2based(dictionary[tables_list[i]]["kvar"],dictionary[tables_list[i+1]]["kvar"])
+        if(loss<100):
+            print([list(dictionary.keys())[i]],"       ",[list(dictionary.keys())[i+1]])
+            print(loss)
+    '''
     
     #plot_power_graph("s3_alloffwithairconditioOutsideBasharaRoom_output3_table1")
     #plot_power_graph_spectrum("s3_alloffwithairconditioOutsideBasharaRoom_output3_table1")
