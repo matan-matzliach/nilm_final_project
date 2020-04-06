@@ -229,6 +229,20 @@ def plot_power_graph_spectrum(tableName):
     plt.savefig("plots/spectrum/"+tableName+".png", format="png")
     plt.show()
 
+def plot_power_graph2(tableName1,tableName2):
+    #plt.title("power graphs: "+tableName1+" "+tableName2)
+    fig, [ax1, ax2] = plt.subplots(2, 1)
+    ax1.set_title(tableName1)
+    ax1.plot(dictionary[tableName1]["kW"],label="kW")
+    ax1.plot(dictionary[tableName1]["kvar"],label="kvar")
+    ax2.set_title(tableName2)
+    ax2.plot(dictionary[tableName2]["kW"],label="kW")
+    ax2.plot(dictionary[tableName2]["kvar"],label="kvar")
+    ax1.legend()
+    ax2.legend()
+    #plt.savefig("plots/time/"+tableName+".png", format="png")
+    fig.show()
+
 
 def dft_vector(vector):
     return np.abs(np.fft.fft(vector))
@@ -243,7 +257,23 @@ def diff_l2based(table1,table2):
       return l2_distance(dft_vector(table1),dft_vector(table2))
 def diff_l1based(table1,table2):
       return l1_distance(dft_vector(table1),dft_vector(table2))
-    
+
+
+
+def find_edges(table, threshold, positive_flag, negative_flag):
+    #threshhold is relative to table values
+    #positive flag is for positive gradients
+    #negative flag is for negative gradients
+    t_arr=list()
+    for t in range(1,len(table)):
+        if(positive_flag and table[t]-table[t-1]>=threshold*table[t]):
+            t_arr.append(t)
+        elif(negative_flag and table[t-1]-table[t]>=threshold*table[t]):
+            t_arr.append(t)
+    return t_arr
+
+
+  
 if __name__ == "__main__":
     
     
@@ -283,9 +313,10 @@ if __name__ == "__main__":
                     best_loss=loss
                     closest_table=table2
             print(table1,"-----",closest_table,"-----",best_loss)
+            #plot_power_graph2(table1,closest_table)
     
-    
-    
+    print(find_edges(dictionary["s3_alloffairconditiononelight_output1_table1"]["kW"],0.05,True,True))
+    plot_power_graph("s3_alloffairconditiononelight_output1_table1")
     
     '''for i in range(len(tables_list)-1):  
         if(len(dictionary[tables_list[i]]["kvar"])<200):
