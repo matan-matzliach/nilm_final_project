@@ -315,7 +315,8 @@ if __name__ == "__main__":
             print(table1,"-----",closest_table,"-----",best_loss)
             #plot_power_graph2(table1,closest_table)
     
-    print(find_edges(dictionary["s3_alloffairconditiononelight_output1_table1"]["kW"],0.05,True,True))
+    print('============')
+    print("Edges timestamps:",find_edges(dictionary["s3_alloffairconditiononelight_output1_table1"]["kW"],0.05,True,True))
     plot_power_graph("s3_alloffairconditiononelight_output1_table1")
     
     '''for i in range(len(tables_list)-1):  
