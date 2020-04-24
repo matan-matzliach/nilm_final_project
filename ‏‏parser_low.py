@@ -49,7 +49,7 @@ def add_tables_to_dict(prefix_str,relative_path,dictionary):
     prefixlist.append(prefix_str)
 
 
-def parse_all_data(dictionary):
+def parse_all_data(dictionary,dictionary_2):
     #first_session
     add_tables_to_dict("s1_alloff","./firstSession/alloff/low/output",dictionary)
     add_tables_to_dict("s1_alloffwithairconditionoutsideofbsharasroom","./firstSession/alloffwithairconditionoutsideofbsharasroom/low/output",dictionary)
@@ -82,6 +82,12 @@ def parse_all_data(dictionary):
     add_tables_to_dict("s4_mw","./forthSession/mw/low/output",dictionary)
     add_tables_to_dict("s4_onelightAndAircondi","./forthSession/onelightAndAircondi/low/output",dictionary)
     add_tables_to_dict("s4_twolightandAirco","./forthSession/twolightandAirco/low/output",dictionary)
+    
+    
+    #full_2_days
+    add_tables_to_dict("Administrato","./satec_samples/",dictionary_2)
+    
+    
 
 def diff_all_data(dictionary,difdictionary,prefixlist):
     for i in range(len(prefixlist)):
@@ -169,6 +175,7 @@ def diff_all_data(dictionary,difdictionary,prefixlist):
         
 
 dictionary=dict()
+dictionary_2days=dict()
 prefixlist=[]
 difdictionary=dict()
 sumdictionary=dict()
@@ -209,6 +216,17 @@ def sync_voltage(table1,table2,num_of_samples):#num_of_samples will be between 1
                     indexes=(i,j)
     return indexes
     
+
+def plot_graph(tableName, dic, parameterName,init_index=0,fin_index=-1):
+    plt.title(parameterName+ " graph: "+tableName)
+    print(dic.keys())
+    plt.plot(dic[tableName][parameterName][init_index:fin_index],label=parameterName)
+    plt.legend()
+    plt.show()
+    
+    
+    
+
 
 def plot_power_graph(tableName):
     plt.title("power graph: "+tableName)
@@ -273,12 +291,25 @@ def find_edges(table, threshold, positive_flag, negative_flag):
     return t_arr
 
 
+def find_edges_abs(table, threshold, positive_flag, negative_flag):
+    #threshhold is relative to table values
+    #positive flag is for positive gradients
+    #negative flag is for negative gradients
+    t_arr=list()
+    for t in range(1,len(table)):
+        if(positive_flag and table[t]-table[t-1]>=threshold):
+            t_arr.append(t)
+        elif(negative_flag and table[t-1]-table[t]>=threshold):
+            t_arr.append(t)
+    return t_arr
+
+
   
 if __name__ == "__main__":
     
     
     
-    parse_all_data(dictionary)
+    parse_all_data(dictionary,dictionary_2days)
     tables_list=list(dictionary.keys()) #names of all the tables
     print(tables_list)
     for i in range(len(tables_list)):
@@ -298,7 +329,7 @@ if __name__ == "__main__":
     #for tablename in dictionary.keys():
     #     plot_power_graph_spectrum(tablename)
     
-    base_tables=[tables_list[i] for i in [0,3,4,7,10,13,14,15,16,18,22,23,26,29,31,33,35,36]]
+    '''base_tables=[tables_list[i] for i in [0,3,4,7,10,13,14,15,16,18,22,23,26,29,31,33,35,36]]
     
     for table1 in tables_list:
         if (table1 in base_tables):
@@ -317,7 +348,7 @@ if __name__ == "__main__":
     
     print('============')
     print("Edges timestamps:",find_edges(dictionary["s3_alloffairconditiononelight_output1_table1"]["kW"],0.05,True,True))
-    plot_power_graph("s3_alloffairconditiononelight_output1_table1")
+    plot_power_graph("s3_alloffairconditiononelight_output1_table1")'''
     
     '''for i in range(len(tables_list)-1):  
         if(len(dictionary[tables_list[i]]["kvar"])<200):
@@ -328,6 +359,25 @@ if __name__ == "__main__":
             print([list(dictionary.keys())[i]],"       ",[list(dictionary.keys())[i+1]])
             print(loss)
     '''
+    
+    
+    
+    
+    plot_graph("Administrato_output1_table2",dictionary_2days,"I1 THD",0)
+    plot_graph("Administrato_output1_table1",dictionary_2days,"I1 THD",0)
+    plot_graph("Administrato_output1_table4",dictionary_2days,"I1 THD",0)
+    
+    plot_graph("Administrato_output1_table2",dictionary_2days,"kW L1",0)
+    plot_graph("Administrato_output1_table2",dictionary_2days,"I1",0)
+    plot_graph("Administrato_output1_table1",dictionary_2days,"kW L1",0)
+    plot_graph("Administrato_output1_table4",dictionary_2days,"kW L1",0)
+    
+    #plot_graph("Administrato_output1_table3",dictionary_2days,"I1 THD",241)
+    
+    #print("Edges timestamps:",find_edges(dictionary_2days["Administrato_output1_table4"]["I1 THD"],0.2,positive_flag=True,negative_flag=True))
+    #plot_graph("Administrato_output1_table4",dictionary_2days,"kW L2",0)
+    #print("Edges timestamps:",find_edges_abs(dictionary_2days["Administrato_output1_table4"]["kW L1"],0.2,positive_flag=True,negative_flag=True))
+    
     
     #plot_power_graph("s3_alloffwithairconditioOutsideBasharaRoom_output3_table1")
     #plot_power_graph_spectrum("s3_alloffwithairconditioOutsideBasharaRoom_output3_table1")
