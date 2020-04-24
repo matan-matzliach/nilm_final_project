@@ -4,6 +4,10 @@ import csv
 import numpy as np
 import matplotlib.pyplot as plt
 import math
+import time
+import datetime as dt
+import matplotlib.dates as md
+
 
 def csvToDict(relative_path):
     #converts csv file to matrix
@@ -19,8 +23,12 @@ def csvToDict(relative_path):
                 break
             i=0
             for head in header:
-                table[head]=list()
-                num_to_header[i]=str(head)
+                if("DoubleTime" in head):
+                    table["DoubleTime"]=list()
+                    num_to_header[i]="DoubleTime"
+                else:
+                    table[head]=list()
+                    num_to_header[i]=str(head)
                 i+=1
             for row in reader: #second line does has data that does not match the real values
                 break
@@ -217,10 +225,24 @@ def sync_voltage(table1,table2,num_of_samples):#num_of_samples will be between 1
     return indexes
     
 
-def plot_graph(tableName, dic, parameterName,init_index=0,fin_index=-1):
-    plt.title(parameterName+ " graph: "+tableName)
+def plot_graph(tableName, dic, parameterlst,dates=False,init_index=0,fin_index=-1):
+    if(len(parameterlst)==1):
+        plt.title(str(parameterlst[0])+ " graph: "+tableName)
+    else:
+         plt.title(str(parameterlst)+ " graph: "+tableName)
     print(dic.keys())
-    plt.plot(dic[tableName][parameterName][init_index:fin_index],label=parameterName)
+    if(dates==True):
+        xfmt = md.DateFormatter('%H:%M:%S')
+        plt.xticks( rotation= 80 )
+        ax=plt.gca()
+        ax.xaxis.set_major_formatter(xfmt)
+        ax.xaxis_date()
+        x_dates=[dt.datetime.strptime(val,"%m/%d/%y  %H:%M:%S.%f") for val in dic[tableName]["StringTime"][init_index:fin_index]]
+        for parameterName in parameterlst:
+            plt.plot(x_dates,dic[tableName][parameterName][init_index:fin_index],label=parameterName)
+    else:
+        for parameterName in parameterlst:
+            plt.plot(dic[tableName][parameterName][init_index:fin_index],label=parameterName)
     plt.legend()
     plt.show()
     
@@ -363,14 +385,19 @@ if __name__ == "__main__":
     
     
     
-    plot_graph("Administrato_output1_table2",dictionary_2days,"I1 THD",0)
-    plot_graph("Administrato_output1_table1",dictionary_2days,"I1 THD",0)
-    plot_graph("Administrato_output1_table4",dictionary_2days,"I1 THD",0)
+    plot_graph("Administrato_output1_table2",dictionary_2days,["I1 THD"],True,2)
+    plot_graph("Administrato_output1_table1",dictionary_2days,["I1 THD"],True,2)
+    plot_graph("Administrato_output1_table4",dictionary_2days,["I1 THD"],True,2)
     
-    plot_graph("Administrato_output1_table2",dictionary_2days,"kW L1",0)
-    plot_graph("Administrato_output1_table2",dictionary_2days,"I1",0)
-    plot_graph("Administrato_output1_table1",dictionary_2days,"kW L1",0)
-    plot_graph("Administrato_output1_table4",dictionary_2days,"kW L1",0)
+    plot_graph("Administrato_output1_table2",dictionary_2days,["I1"],True,2)
+    plot_graph("Administrato_output1_table1",dictionary_2days,["I1"],True,2)
+    plot_graph("Administrato_output1_table4",dictionary_2days,["I1"],True,2)
+    
+    
+    print("Edges timestamps:",find_edges_abs(dictionary_2days["Administrato_output1_table4"]["I1"],1.5,positive_flag=True,negative_flag=True))
+    
+    
+    
     
     #plot_graph("Administrato_output1_table3",dictionary_2days,"I1 THD",241)
     
