@@ -232,7 +232,8 @@ def plot_graph(tableName, dic, parameterlst,dates=False,init_index=0,fin_index=-
          plt.title(str(parameterlst)+ " graph: "+tableName)
     print(dic.keys())
     if(dates==True):
-        xfmt = md.DateFormatter('%H:%M:%S')
+        #xfmt = md.DateFormatter('%d-%m  %H:%M:%S')
+        xfmt = md.DateFormatter('%H:%M')
         plt.xticks( rotation= 80 )
         ax=plt.gca()
         ax.xaxis.set_major_formatter(xfmt)
@@ -244,6 +245,7 @@ def plot_graph(tableName, dic, parameterlst,dates=False,init_index=0,fin_index=-
         for parameterName in parameterlst:
             plt.plot(dic[tableName][parameterName][init_index:fin_index],label=parameterName)
     plt.legend()
+    #plt.savefig("plots/general_graphs/"+tableName+" PAR="+str(parameterlst)+".png", format="png")
     plt.show()
     
     
@@ -313,6 +315,20 @@ def find_edges(table, threshold, positive_flag, negative_flag):
     return t_arr
 
 
+def already_exist_at_dist(indices,ind,threshold):
+    for i in indices:
+        if (i-ind)**2<=threshold**2:
+            return True
+    return False
+
+def edges_cleaner(indices,threshold):
+    new_indices=list()
+    for ind in indices:
+        if (already_exist_at_dist(new_indices,ind,threshold)==False):
+            new_indices.append(ind)
+    return new_indices
+
+
 def find_edges_abs(table, threshold, positive_flag, negative_flag):
     #threshhold is relative to table values
     #positive flag is for positive gradients
@@ -324,6 +340,18 @@ def find_edges_abs(table, threshold, positive_flag, negative_flag):
         elif(negative_flag and table[t-1]-table[t]>=threshold):
             t_arr.append(t)
     return t_arr
+
+
+def sublist(lst,indices):
+    ls=list()
+    for ind in indices:
+        ls.append(lst[ind])
+    return ls
+
+def timestamps_to_strings(dic,indices):
+    times=sublist(dic["StringTime"],indices)
+    return times
+    
 
 
   
@@ -385,17 +413,27 @@ if __name__ == "__main__":
     
     
     
-    plot_graph("Administrato_output1_table2",dictionary_2days,["I1 THD"],True,2)
-    plot_graph("Administrato_output1_table1",dictionary_2days,["I1 THD"],True,2)
-    plot_graph("Administrato_output1_table4",dictionary_2days,["I1 THD"],True,2)
+    plot_graph("Administrato_output1_table2",dictionary_2days,["I1 THD","I2 THD","I3 THD"],True,0)
+    #plot_graph("Administrato_output1_table1",dictionary_2days,["I1 THD","I2 THD","I3 THD"],True,0)
+    #plot_graph("Administrato_output1_table4",dictionary_2days,["I1 THD","I2 THD","I3 THD"],True,0)
     
-    plot_graph("Administrato_output1_table2",dictionary_2days,["I1"],True,2)
-    plot_graph("Administrato_output1_table1",dictionary_2days,["I1"],True,2)
-    plot_graph("Administrato_output1_table4",dictionary_2days,["I1"],True,2)
+    plot_graph("Administrato_output1_table2",dictionary_2days,["I1","I2","I3"],True,0)
+    #plot_graph("Administrato_output1_table1",dictionary_2days,["I1","I2","I3"],True,0)
+    #plot_graph("Administrato_output1_table4",dictionary_2days,["I1","I2","I3"],True,0)
     
     
-    print("Edges timestamps:",find_edges_abs(dictionary_2days["Administrato_output1_table4"]["I1"],1.5,positive_flag=True,negative_flag=True))
+    print("I1 Edges timestamps:",timestamps_to_strings(dictionary_2days["Administrato_output1_table2"],edges_cleaner(find_edges_abs(dictionary_2days["Administrato_output1_table2"]["I1"],0.5,positive_flag=True,negative_flag=True),0)))
+    print("I2 Edges timestamps:",timestamps_to_strings(dictionary_2days["Administrato_output1_table2"],edges_cleaner(find_edges_abs(dictionary_2days["Administrato_output1_table2"]["I2"],0.5,positive_flag=True,negative_flag=True),0)))
+    print("I3 Edges timestamps:",timestamps_to_strings(dictionary_2days["Administrato_output1_table2"],edges_cleaner(find_edges_abs(dictionary_2days["Administrato_output1_table2"]["I3"],0.5,positive_flag=True,negative_flag=True),0)))
     
+    
+    
+    
+    
+    
+    #print("I2 Edges timestamps:",find_edges_abs(dictionary_2days["Administrato_output1_table2"]["I2"],1.5,positive_flag=True,negative_flag=True)) 
+    #print("I3 Edges timestamps:",find_edges_abs(dictionary_2days["Administrato_output1_table2"]["I3"],1.5,positive_flag=True,negative_flag=True))
+
     
     
     
