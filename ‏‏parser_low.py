@@ -321,12 +321,27 @@ def already_exist_at_dist(indices,ind,threshold):
             return True
     return False
 
+
+def already_exist_at_dist2(edges_pairs,pair,threshold):
+    for pair2 in edges_pairs:
+        if (pair[0]-pair2[0])**2<=threshold**2 and pair[0]>pair2[0] and pair[1]==pair2[1]: 
+            return True
+    return False
+
 def edges_cleaner(indices,threshold):
     new_indices=list()
     for ind in indices:
         if (already_exist_at_dist(new_indices,ind,threshold)==False):
             new_indices.append(ind)
     return new_indices
+
+
+def edges_cleaner2(edges_pairs,threshold):
+    new_pairs=list()
+    for pair in edges_pairs:
+        if (already_exist_at_dist2(edges_pairs,pair,threshold)==False):
+            new_pairs.append(pair)
+    return new_pairs
 
 
 def find_edges_abs(table, threshold, positive_flag, negative_flag):
@@ -342,6 +357,20 @@ def find_edges_abs(table, threshold, positive_flag, negative_flag):
     return t_arr
 
 
+def find_edges_abs_plus_size(table, threshold, positive_flag, negative_flag):
+    #threshhold is relative to table values
+    #positive flag is for positive gradients
+    #negative flag is for negative gradients
+    print(table[505],table[506],table[507])
+    t_arr=list()
+    for t in range(1,len(table)):
+        if(positive_flag and table[t]-table[t-1]>=threshold):
+            t_arr.append([t,table[t]-table[t-1]])
+        elif(negative_flag and table[t-1]-table[t]>=threshold):
+            t_arr.append([t,table[t]-table[t-1]])
+    return t_arr
+
+
 def sublist(lst,indices):
     ls=list()
     for ind in indices:
@@ -352,9 +381,46 @@ def timestamps_to_strings(dic,indices):
     times=sublist(dic["StringTime"],indices)
     return times
     
+def timestamps_to_strings2(dic,pairs_arr):
+    times=sublist(dic["StringTime"],[x[0] for x in pairs_arr])
+    return [[times[i],pairs_arr[i][1]] for i in range(len(times))]
 
 
-  
+def up_down_connector(pairs_arr,threshold_size=0,epsilon=0):
+    #gets an array with elements of format ('time',edge size)
+    res=[]
+    i=0
+    while(i<len(pairs_arr)-1):
+        if(pairs_arr[i][1] >=threshold_size): #i.e it is up and we want to find its down pair
+            size=pairs_arr[i][1]
+            t1 = dt.datetime.strptime(pairs_arr[i][0], '%m/%d/%y  %H:%M:%S.%f')
+            t2 = dt.datetime.strptime(pairs_arr[i+1][0], '%m/%d/%y  %H:%M:%S.%f')
+            if(i<len(pairs_arr) and pairs_arr[i+1][1]>=threshold_size and t2-t1<=dt.timedelta(0,10)): #10 seconds difference
+                    size+=pairs_arr[i+1][1]
+            for j in range(i+1,len(pairs_arr)): #for all possible elements after it
+                if(abs(size+pairs_arr[j][1])<=epsilon): #one sample difference
+                    t2 = dt.datetime.strptime(pairs_arr[j][0], '%m/%d/%y  %H:%M:%S.%f')
+                    res.append([pairs_arr[i][0],pairs_arr[j][0],pairs_arr[i][1],pairs_arr[j][1],t2-t1])
+                    i=j
+                    break
+                if(j+1==len(pairs_arr)):
+                    break
+                t3 = dt.datetime.strptime(pairs_arr[j][0], '%m/%d/%y  %H:%M:%S.%f')
+                if(abs(size+pairs_arr[j][1]+pairs_arr[j+1][1])<=epsilon and t3-t2<=dt.timedelta(0,10)): #two sample difference               
+                    res.append([pairs_arr[i][0],pairs_arr[j+1][0],size,pairs_arr[j][1]+pairs_arr[j+1][1],t3-t1])
+                    i=j+1
+                    break
+        i+=1
+    return res
+                
+            
+    
+    
+    
+    
+
+
+
 if __name__ == "__main__":
     
     
@@ -422,14 +488,24 @@ if __name__ == "__main__":
     #plot_graph("Administrato_output1_table4",dictionary_2days,["I1","I2","I3"],True,0)
     
     
-    print("I1 Edges timestamps:",timestamps_to_strings(dictionary_2days["Administrato_output1_table2"],edges_cleaner(find_edges_abs(dictionary_2days["Administrato_output1_table2"]["I1"],0.5,positive_flag=True,negative_flag=True),0)))
-    print("I2 Edges timestamps:",timestamps_to_strings(dictionary_2days["Administrato_output1_table2"],edges_cleaner(find_edges_abs(dictionary_2days["Administrato_output1_table2"]["I2"],0.5,positive_flag=True,negative_flag=True),0)))
-    print("I3 Edges timestamps:",timestamps_to_strings(dictionary_2days["Administrato_output1_table2"],edges_cleaner(find_edges_abs(dictionary_2days["Administrato_output1_table2"]["I3"],0.5,positive_flag=True,negative_flag=True),0)))
+    #print("I1 Edges timestamps:",timestamps_to_strings(dictionary_2days["Administrato_output1_table2"],edges_cleaner(find_edges_abs(dictionary_2days["Administrato_output1_table2"]["I1"],0.5,positive_flag=True,negative_flag=True),100)))
+    #print("I2 Edges timestamps:",timestamps_to_strings(dictionary_2days["Administrato_output1_table2"],edges_cleaner(find_edges_abs(dictionary_2days["Administrato_output1_table2"]["I2"],0.5,positive_flag=True,negative_flag=True),0)))
+    #print("I3 Edges timestamps:",timestamps_to_strings(dictionary_2days["Administrato_output1_table2"],edges_cleaner(find_edges_abs(dictionary_2days["Administrato_output1_table2"]["I3"],0.5,positive_flag=True,negative_flag=True),0)))
     
     
+    #print("I1 Edges timestamps:",timestamps_to_strings2(dictionary_2days["Administrato_output1_table2"],edges_cleaner2(find_edges_abs_plus_size(dictionary_2days["Administrato_output1_table2"]["I1"],0.5,positive_flag=True,negative_flag=True),0)))
+    #print("I3 Edges timestamps:",timestamps_to_strings2(dictionary_2days["Administrato_output1_table2"],edges_cleaner2(find_edges_abs_plus_size(dictionary_2days["Administrato_output1_table2"]["I3"],0.5,positive_flag=True,negative_flag=True),0)))
+    M1=timestamps_to_strings2(dictionary_2days["Administrato_output1_table2"],edges_cleaner2(find_edges_abs_plus_size(dictionary_2days["Administrato_output1_table2"]["I1"],0.5,positive_flag=True,negative_flag=True),0))
+    M2=timestamps_to_strings2(dictionary_2days["Administrato_output1_table2"],edges_cleaner2(find_edges_abs_plus_size(dictionary_2days["Administrato_output1_table2"]["I2"],0.5,positive_flag=True,negative_flag=True),0))
+    M3=timestamps_to_strings2(dictionary_2days["Administrato_output1_table2"],edges_cleaner2(find_edges_abs_plus_size(dictionary_2days["Administrato_output1_table2"]["I3"],0.5,positive_flag=True,negative_flag=True),0))
+    print("up_down_connector M1 : ",up_down_connector(M1,2,1))
+    print("up_down_connector M2 : ",up_down_connector(M2,2,1))
+    print("up_down_connector M3 : ",up_down_connector(M3,2,1))
     
-    
-    
+    #print(len(up_down_connector(M2,2,0)))
+    #print(len(up_down_connector(M2,2,1)))
+    #print(len(up_down_connector(M3,2,0)))
+    #print(len(up_down_connector(M3,2,1)))
     
     #print("I2 Edges timestamps:",find_edges_abs(dictionary_2days["Administrato_output1_table2"]["I2"],1.5,positive_flag=True,negative_flag=True)) 
     #print("I3 Edges timestamps:",find_edges_abs(dictionary_2days["Administrato_output1_table2"]["I3"],1.5,positive_flag=True,negative_flag=True))
