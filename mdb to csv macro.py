@@ -20,7 +20,7 @@ def proc(path_list,access_driver,orig_path):
                 keys=[c[0] for c in crsr.description]
                 #crsr.close()
                 #conn.close()
-                with open('/{}.csv'.format(os.path.basename(path)+'_'+i[-3]), 'w',newline='') as csvfile:
+                with open('{}/{}.csv'.format(orig_path,os.path.basename(path)+'_'+i[-3]), 'w',newline='') as csvfile:
                     csv_writer = csv.writer(csvfile) # default field-delimiter is ","
                     csv_writer.writerow(keys)
                     for row in rows:
@@ -29,13 +29,15 @@ def proc(path_list,access_driver,orig_path):
                 #break
         crsr.close()
         conn.close()
-def printit(path_list,access_driver,orig_path):
+def printit(path_list,access_driver,orig_path,up_time):
   #threading process to make the convertion run every 5 minutes
-  threading.Timer(300, proc,args=[path_list,access_driver,orig_path]).start()
+  threading.Timer(up_time, proc,args=[path_list,access_driver,orig_path]).start()
   #proc(path_list,access_driver)
 
 def main():
-    print("write the path to the folder where the mdb file will be outputed to.(write it as C:/.../.../.../")
+    print("write the number of minutes you want to pass between updates:")
+    up_time=60*int(input())
+    print("write the path to the folder where the mdb file will be outputed to:(write it as C:/.../.../.../)")
     orig_path=input()
     path_list=glob.glob(orig_path+'/*.mdb')
     for i in path_list:
@@ -45,7 +47,7 @@ def main():
     #for i in DataSource:
     #    print(i)
     access_driver=pyodbc.dataSources()['MS Access Database']
-    printit(path_list,access_driver,orig_path)
+    printit(path_list,access_driver,orig_path,up_time)
     proc(path_list,access_driver,orig_path)
     while(True):
         a="a" #a line for stalling
