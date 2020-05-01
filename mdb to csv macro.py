@@ -14,12 +14,15 @@ def proc(path_list,access_driver,orig_path):
                     SQL = 'SELECT * FROM {}'.format(i[-3]) #a query for collecting the rows of the table
                 else:
                     SQL = 'SELECT * FROM [{}]'.format(i[-3]) #a query for collecting the rows of the table
-                #print(SQL)
+                #print("BEFORE: "+SQL+str(time.asctime( time.localtime(time.time()))))
                 crsr.execute(SQL)
+                #print("AFTER: "+SQL+str(time.asctime( time.localtime(time.time()))))
                 rows =crsr.fetchall()
                 keys=[c[0] for c in crsr.description]
                 #crsr.close()
                 #conn.close()
+                if(os.path.exists('{}/{}.csv'.format(orig_path,os.path.basename(path)+'_'+i[-3]))):
+                    os.remove('{}/{}.csv'.format(orig_path,os.path.basename(path)+'_'+i[-3]))
                 with open('{}/{}.csv'.format(orig_path,os.path.basename(path)+'_'+i[-3]), 'w',newline='') as csvfile:
                     csv_writer = csv.writer(csvfile) # default field-delimiter is ","
                     csv_writer.writerow(keys)
@@ -29,14 +32,11 @@ def proc(path_list,access_driver,orig_path):
                 #break
         crsr.close()
         conn.close()
-def printit(path_list,access_driver,orig_path,up_time):
-  #threading process to make the convertion run every 5 minutes
-  threading.Timer(up_time, proc,args=[path_list,access_driver,orig_path]).start()
-  #proc(path_list,access_driver)
+    print("Done for time:"+str(time.asctime( time.localtime(time.time()))))
 
 def main():
-    print("write the number of minutes you want to pass between updates:")
-    up_time=60*int(input())
+    print("write the number of minutes you want to pass between updates: (has to be at least 1)")
+    up_time=60.0*float(input())
     print("write the path to the folder where the mdb file will be outputed to:(write it as C:/.../.../.../)")
     orig_path=input()
     path_list=glob.glob(orig_path+'/*.mdb')
@@ -47,9 +47,8 @@ def main():
     #for i in DataSource:
     #    print(i)
     access_driver=pyodbc.dataSources()['MS Access Database']
-    printit(path_list,access_driver,orig_path,up_time)
-    proc(path_list,access_driver,orig_path)
     while(True):
-        a="a" #a line for stalling
+        threading.Timer(0, proc,args=[path_list,access_driver,orig_path]).start() #run the process
+        time.sleep(up_time)
 if __name__ == "__main__":
     main()
