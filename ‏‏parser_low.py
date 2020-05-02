@@ -383,7 +383,7 @@ def timestamps_to_strings(dic,indices):
     
 def timestamps_to_strings2(dic,pairs_arr):
     times=sublist(dic["StringTime"],[x[0] for x in pairs_arr])
-    return [[times[i],pairs_arr[i][1]] for i in range(len(times))]
+    return [[times[i],pairs_arr[i][1],pairs_arr[i][0]] for i in range(len(times))]
 
 
 def up_down_connector(pairs_arr,threshold_size=0,epsilon=0):
@@ -398,27 +398,81 @@ def up_down_connector(pairs_arr,threshold_size=0,epsilon=0):
             if(i<len(pairs_arr) and pairs_arr[i+1][1]>=threshold_size and t2-t1<=dt.timedelta(0,10)): #10 seconds difference
                     size+=pairs_arr[i+1][1]
             for j in range(i+1,len(pairs_arr)): #for all possible elements after it
+                t2 = dt.datetime.strptime(pairs_arr[j][0], '%m/%d/%y  %H:%M:%S.%f')
                 if(abs(size+pairs_arr[j][1])<=epsilon): #one sample difference
-                    t2 = dt.datetime.strptime(pairs_arr[j][0], '%m/%d/%y  %H:%M:%S.%f')
-                    res.append([pairs_arr[i][0],pairs_arr[j][0],pairs_arr[i][1],pairs_arr[j][1],t2-t1])
-                    i=j
+                    res.append([pairs_arr[i][0],pairs_arr[j][0],size,pairs_arr[j][1],(t2-t1),pairs_arr[i][2],pairs_arr[j][2]])
+                    i=i+1
                     break
                 if(j+1==len(pairs_arr)):
                     break
-                t3 = dt.datetime.strptime(pairs_arr[j][0], '%m/%d/%y  %H:%M:%S.%f')
+                t3 = dt.datetime.strptime(pairs_arr[j+1][0], '%m/%d/%y  %H:%M:%S.%f')
                 if(abs(size+pairs_arr[j][1]+pairs_arr[j+1][1])<=epsilon and t3-t2<=dt.timedelta(0,10)): #two sample difference               
-                    res.append([pairs_arr[i][0],pairs_arr[j+1][0],size,pairs_arr[j][1]+pairs_arr[j+1][1],t3-t1])
-                    i=j+1
+                    res.append([pairs_arr[i][0],pairs_arr[j+1][0],size,pairs_arr[j][1]+pairs_arr[j+1][1],t3-t1,pairs_arr[i][2],pairs_arr[j+1][2]])
+                    i=i+2
                     break
         i+=1
     return res
                 
-            
-    
-    
-    
-    
 
+
+def filter_duration(tensor, index_time,min_time_seconds,max_time_seconds):
+    min_t=dt.timedelta(0,min_time_seconds)
+    max_t=dt.timedelta(0,max_time_seconds)
+    res=[]
+    for vec in tensor:
+        if(vec[index_time]>=min_t and vec[index_time]<=max_t):
+            res.append(vec)
+    return res
+            
+      
+def THD_avg_add(tensor,THD_dict):
+    res=list()
+    for vec in tensor:
+        i1=vec[-2]
+        i2=vec[-1]
+        avg_thd=0
+        for i in range(i1,i2):
+            avg_thd+=THD_dict[i]
+        avg_thd/=(i2-i1)
+        res.append(vec+[avg_thd])
+    return res
+    
+    
+    
+    
+    
+class Device():
+    def __init__(self,current,current_THD):
+        self.current=current
+        self.current_THD=current_THD
+        self.num_apperances=1
+        
+    def similar(self,dev2,eps_curr,eps_THD):
+        if(abs(self.current-dev2.current)<=eps_curr):
+            if(abs(self.current_THD-dev2.current_THD)<=eps_THD):
+                return True
+        return False
+    
+    def similar(self,dev2,eps_curr,eps_THD):
+        if(abs(self.current-dev2.current)<=eps_curr):
+            if(abs(self.current_THD-dev2.current_THD)<=eps_THD):
+                return True
+        return False
+    def update(self,dev2):
+        n=self.num_apperances
+        self.current=(self.current*n+dev2.current)/(n+1)
+        self.current_THD=(self.current_THD*n+dev2.current_THD)/(n+1)
+        self.num_apperances+=1
+
+
+def print_tensor(tensor):
+    for vec in tensor:
+        print(vec)
+
+
+def print_devices(list_devs):
+    for i,dev in enumerate(list_devs):
+        print("DEV #%d: curr:%f, curr_THD:%f"%(i,dev.current,dev.current_THD))
 
 
 if __name__ == "__main__":
@@ -477,13 +531,13 @@ if __name__ == "__main__":
     '''
     
     
+    tablenum=2
     
-    
-    plot_graph("Administrato_output1_table2",dictionary_2days,["I1 THD","I2 THD","I3 THD"],True,0)
+    plot_graph("Administrato_output1_table%d"%tablenum,dictionary_2days,["I1 THD","I2 THD","I3 THD"],True,0)
     #plot_graph("Administrato_output1_table1",dictionary_2days,["I1 THD","I2 THD","I3 THD"],True,0)
     #plot_graph("Administrato_output1_table4",dictionary_2days,["I1 THD","I2 THD","I3 THD"],True,0)
     
-    plot_graph("Administrato_output1_table2",dictionary_2days,["I1","I2","I3"],True,0)
+    plot_graph("Administrato_output1_table%d"%tablenum,dictionary_2days,["I1","I2","I3"],True,0)
     #plot_graph("Administrato_output1_table1",dictionary_2days,["I1","I2","I3"],True,0)
     #plot_graph("Administrato_output1_table4",dictionary_2days,["I1","I2","I3"],True,0)
     
@@ -495,12 +549,68 @@ if __name__ == "__main__":
     
     #print("I1 Edges timestamps:",timestamps_to_strings2(dictionary_2days["Administrato_output1_table2"],edges_cleaner2(find_edges_abs_plus_size(dictionary_2days["Administrato_output1_table2"]["I1"],0.5,positive_flag=True,negative_flag=True),0)))
     #print("I3 Edges timestamps:",timestamps_to_strings2(dictionary_2days["Administrato_output1_table2"],edges_cleaner2(find_edges_abs_plus_size(dictionary_2days["Administrato_output1_table2"]["I3"],0.5,positive_flag=True,negative_flag=True),0)))
-    M1=timestamps_to_strings2(dictionary_2days["Administrato_output1_table2"],edges_cleaner2(find_edges_abs_plus_size(dictionary_2days["Administrato_output1_table2"]["I1"],0.5,positive_flag=True,negative_flag=True),0))
-    M2=timestamps_to_strings2(dictionary_2days["Administrato_output1_table2"],edges_cleaner2(find_edges_abs_plus_size(dictionary_2days["Administrato_output1_table2"]["I2"],0.5,positive_flag=True,negative_flag=True),0))
-    M3=timestamps_to_strings2(dictionary_2days["Administrato_output1_table2"],edges_cleaner2(find_edges_abs_plus_size(dictionary_2days["Administrato_output1_table2"]["I3"],0.5,positive_flag=True,negative_flag=True),0))
-    print("up_down_connector M1 : ",up_down_connector(M1,2,1))
-    print("up_down_connector M2 : ",up_down_connector(M2,2,1))
-    print("up_down_connector M3 : ",up_down_connector(M3,2,1))
+    M1=timestamps_to_strings2(dictionary_2days["Administrato_output1_table%d"%tablenum],edges_cleaner2(find_edges_abs_plus_size(dictionary_2days["Administrato_output1_table%d"%tablenum]["I1"],0.5,positive_flag=True,negative_flag=True),0))
+    M2=timestamps_to_strings2(dictionary_2days["Administrato_output1_table%d"%tablenum],edges_cleaner2(find_edges_abs_plus_size(dictionary_2days["Administrato_output1_table%d"%tablenum]["I2"],0.5,positive_flag=True,negative_flag=True),0))
+    M3=timestamps_to_strings2(dictionary_2days["Administrato_output1_table%d"%tablenum],edges_cleaner2(find_edges_abs_plus_size(dictionary_2days["Administrato_output1_table%d"%tablenum]["I3"],0.5,positive_flag=True,negative_flag=True),0))
+    #print("up_down_connector M1 : ",up_down_connector(M1,2,1))
+    #print("up_down_connector M2 : ",up_down_connector(M2,2,1))
+    #print("up_down_connector M3 : ",up_down_connector(M3,2,1))
+    
+    
+    
+    
+   
+    
+    
+    
+    
+    
+    
+    
+    UD1=filter_duration(up_down_connector(M1,2,1), 4,5,50000)
+    UD2=filter_duration(up_down_connector(M2,2,1), 4,5,50000)
+    UD3=filter_duration(up_down_connector(M3,2,1), 4,5,50000)
+    
+    
+    UD1=THD_avg_add(UD1,dictionary_2days["Administrato_output1_table%d"%tablenum]["I1 THD"])
+    UD2=THD_avg_add(UD2,dictionary_2days["Administrato_output1_table%d"%tablenum]["I2 THD"])
+    UD3=THD_avg_add(UD3,dictionary_2days["Administrato_output1_table%d"%tablenum]["I3 THD"])
+    
+    
+    
+    '''print("up_down_connector UD1 : ")
+    print_tensor(UD1)
+    print()
+    print("up_down_connector UD2 : ")
+    print_tensor(UD2)
+    print()'''
+    print("up_down_connector UD3 : ")
+    print_tensor(UD1)
+    
+    
+    list_devices=list()
+    device_index=list()
+    for ele in UD1:
+        dev1=Device(0.5*(ele[2]-ele[3]),ele[7])
+        match_flag=False
+        for i,dev2 in enumerate(list_devices):
+            if(dev1.similar(dev2,eps_curr=1,eps_THD=5)):
+                device_index.append(i)
+                dev2.update(dev1)
+                match_flag=True
+                break
+        if(match_flag==False):
+            #This is where we interact with the user and ask what device was used for the first time
+            list_devices.append(dev1)
+            device_index.append(len(list_devices)-1)
+    
+    print("===================")
+    print_devices(list_devices)
+    print(device_index)
+    
+    
+    
+    
     
     #print(len(up_down_connector(M2,2,0)))
     #print(len(up_down_connector(M2,2,1)))
