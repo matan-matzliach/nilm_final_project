@@ -226,6 +226,37 @@ def sync_voltage(table1,table2,num_of_samples):#num_of_samples will be between 1
     
 
 def plot_graph(tableName, dic, parameterlst,dates=False,init_index=0,fin_index=-1):
+    if(isinstance(init_index,str) and dates==True):
+        t0=dt.datetime.strptime(init_index,"%H:%M:%S").time()
+        t0=dt.datetime.combine(dt.date.today(), t0)
+        flag_found=False
+        for i in range(len(dic[tableName]["StringTime"])):
+            t1=dt.datetime.strptime(dic[tableName]["StringTime"][i],"%m/%d/%y  %H:%M:%S.%f").time()
+            t1=dt.datetime.combine(dt.date.today(), t1)
+            if(abs(t1-t0)<dt.timedelta(0,10)):
+                init_index=i
+                flag_found=True
+                break
+        if(not(flag_found)):
+            print("Error: initial time is not after of "+str(t0))
+            return
+    
+    if(isinstance(fin_index,str) and dates==True):
+        t0=dt.datetime.strptime(fin_index,"%H:%M:%S").time()
+        t0=dt.datetime.combine(dt.date.today(), t0)
+        flag_found=False
+        for i in range(len(dic[tableName]["StringTime"])):
+            t1=dt.datetime.strptime(dic[tableName]["StringTime"][i],"%m/%d/%y  %H:%M:%S.%f").time()
+            t1=dt.datetime.combine(dt.date.today(), t1)
+            if(abs(t1-t0)<dt.timedelta(0,10)):
+                fin_index=i
+                flag_found=True
+                break
+        if(not(flag_found)):
+            print("Error: final time is not before of "+str(t0))
+            return
+    
+    
     if(len(parameterlst)==1):
         plt.title(str(parameterlst[0])+ " graph: "+tableName)
     else:
@@ -361,7 +392,7 @@ def find_edges_abs_plus_size(table, threshold, positive_flag=True, negative_flag
     #threshhold is relative to table values
     #positive flag is for positive gradients
     #negative flag is for negative gradients
-    print(table[505],table[506],table[507])
+
     t_arr=list()
     for t in range(1,len(table)):
         if(positive_flag and table[t]-table[t-1]>=threshold):
@@ -553,7 +584,7 @@ if __name__ == "__main__":
     #plot_graph("Administrato_output1_table1",dictionary_2days,["I1 THD","I2 THD","I3 THD"],True,0)
     #plot_graph("Administrato_output1_table4",dictionary_2days,["I1 THD","I2 THD","I3 THD"],True,0)
     
-    plot_graph("Administrato_output1_table%d"%tablenum,dictionary_2days,["I1","I2","I3"],True,0)
+    plot_graph("Administrato_output1_table%d"%tablenum,dictionary_2days,["I1","I2","I3"],True)
     #plot_graph("Administrato_output1_table1",dictionary_2days,["I1","I2","I3"],True,0)
     #plot_graph("Administrato_output1_table4",dictionary_2days,["I1","I2","I3"],True,0)
     
