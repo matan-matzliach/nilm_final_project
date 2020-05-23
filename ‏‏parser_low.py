@@ -4,7 +4,6 @@ import csv
 import numpy as np
 import matplotlib.pyplot as plt
 import math
-import time
 import datetime as dt
 import matplotlib.dates as md
 
@@ -477,20 +476,47 @@ def THD_avg_add(tensor,THD_dict):
     return res
     
     
+def get_time_difference(t1_str,t2_str):
+    #returns the time difference of the hour of the day, independent of the date it was on
+    a=dt.datetime.combine(dt.date.today(),dt.datetime.strptime(t1_str, '%m/%d/%y  %H:%M:%S.%f').time())
+    b=dt.datetime.combine(dt.date.today(),dt.datetime.strptime(t2_str, '%m/%d/%y  %H:%M:%S.%f').time())
+    time_diff=min(abs(a-b),abs(a-b+ dt.timedelta(days=1)))
+    return time_diff
     
     
+def time_score(t1_str,t2_str):
+    #returns the score that 2 devices recieve based on the hour of the day
+    #minimum score 0
+    #maximum score 36
+    #time_diff of 1 second score is 16
+    #time_diff of 1 hour score is 4
+    time_diff=get_time_difference(t1_str,t2_str)
+    initial=dt.timedelta(hours=12)
+    score=0
+    while(time_diff<initial):
+        score+=1
+        initial/=2
+    print(score)
     
+    
+
+
+
 class Device():
-    def __init__(self,current,current_THD,start_time_arr=[],phase=[1,0,0]):
+    def __init__(self,current,current_THD,start_time_arr=[],phase=[1,0,0],phase_static=False):
         self.current=current
         self.current_THD=current_THD
         self.num_apperances=1
         self.start_time_arr=start_time_arr #start times of device in array
         self.fixed_power=True #whether the power is constant or changing over time
         self.phase=phase #whether the power is constant or changing over time
+        self.phase_static=phase_static
         
         
     def similar(self,dev2,eps_curr,eps_THD):
+        if(dev2.phase_static==True and sum([1 if (self.phase[i]+dev2.phase[i])>0 else 0 for i in range(len(dev2.phase))]))>1:
+            #if it is on the same phase all the time and the new device is from another phase
+            return False
         if(abs(self.current-dev2.current)<=eps_curr):
             if(abs(self.current_THD-dev2.current_THD)<=eps_THD):
                 return True
@@ -634,7 +660,13 @@ if __name__ == "__main__":
     UD1=THD_avg_add(UD1,dictionary_2days["Administrato_output1_table%d"%tablenum]["I1 THD"])
     UD2=THD_avg_add(UD2,dictionary_2days["Administrato_output1_table%d"%tablenum]["I2 THD"])
     UD3=THD_avg_add(UD3,dictionary_2days["Administrato_output1_table%d"%tablenum]["I3 THD"])
+    UD_arr=[UD1,UD2,UD3]
     
+    phase1=[1,0,0]
+    phase2=[0,1,0]
+    phase3=[0,0,1]
+    phase_arr=[phase1,phase2,phase3]
+    eps_THD_arr=[5,2,1]
     
     
     '''print("up_down_connector UD1 : ")
@@ -649,55 +681,25 @@ if __name__ == "__main__":
     
     list_devices=list()
     device_index=list()
-    for ele in UD1:
-        dev1=Device(0.5*(ele[2]-ele[3]),ele[7],phase=[1,0,0])
-        match_flag=False
-        for i,dev2 in enumerate(list_devices):
-            if(dev1.similar(dev2,eps_curr=1,eps_THD=5)):
-                device_index.append(i)
-                ele.append(i)
-                dev2.update(dev1)
-                match_flag=True
-                break
-        if(match_flag==False):
-            #This is where we interact with the user and ask what device was used for the first time
-            list_devices.append(dev1)
-            device_index.append(len(list_devices)-1)
-            ele.append(len(list_devices)-1)
+    
+    
+    for phase_ind in range(len(UD_arr)):    
+        for ele in UD_arr[phase_ind]: #UD1 / UD2 / UD3
+            dev1=Device(current=0.5*(ele[2]-ele[3]),current_THD=ele[7],phase=phase_arr[phase_ind].copy())
+            match_flag=False
+            for i,dev2 in enumerate(list_devices):
+                if(dev1.similar(dev2,eps_curr=1,eps_THD=eps_THD_arr[phase_ind])):
+                    device_index.append(i)
+                    ele.append(i)
+                    dev2.update(dev1)
+                    match_flag=True
+                    break
+            if(match_flag==False):
+                #This is where we interact with the user and ask what device was used for the first time
+                list_devices.append(dev1)
+                device_index.append(len(list_devices)-1)
+                ele.append(len(list_devices)-1)
        
-            
-    for ele in UD2:
-        dev1=Device(0.5*(ele[2]-ele[3]),ele[7],phase=[0,1,0])
-        match_flag=False
-        for i,dev2 in enumerate(list_devices):
-            if(dev1.similar(dev2,eps_curr=1,eps_THD=5)):
-                device_index.append(i)
-                ele.append(i)
-                dev2.update(dev1)
-                match_flag=True
-                break
-        if(match_flag==False):
-            #This is where we interact with the user and ask what device was used for the first time
-            list_devices.append(dev1)
-            device_index.append(len(list_devices)-1)
-            ele.append(len(list_devices)-1)
-            
-            
-    for ele in UD3:
-        dev1=Device(0.5*(ele[2]-ele[3]),ele[7],phase=[0,0,1])
-        match_flag=False
-        for i,dev2 in enumerate(list_devices):
-            if(dev1.similar(dev2,eps_curr=1,eps_THD=5)):
-                device_index.append(i)
-                ele.append(i)
-                dev2.update(dev1)
-                match_flag=True
-                break
-        if(match_flag==False):
-            #This is where we interact with the user and ask what device was used for the first time
-            list_devices.append(dev1)
-            device_index.append(len(list_devices)-1)
-            ele.append(len(list_devices)-1)
     
     
     
@@ -715,6 +717,8 @@ if __name__ == "__main__":
     print(device_index)
     
     
+    time_score(UD1[0][0],UD1[5][0])
+    time_score(UD1[0][0],UD1[0][0])
     
     
     #print(len(up_down_connector(M2,2,0)))
