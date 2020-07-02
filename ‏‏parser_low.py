@@ -6,6 +6,8 @@ import matplotlib.pyplot as plt
 import math
 import datetime as dt
 import matplotlib.dates as md
+import pandas as pd
+from dateutil.relativedelta import relativedelta
 
 
 def csvToDict(relative_path):
@@ -224,7 +226,8 @@ def sync_voltage(table1,table2,num_of_samples):#num_of_samples will be between 1
     return indexes
     
 
-def plot_graph(tableName, dic, parameterlst,dates=False,init_index=0,fin_index=-1):
+def plot_graph(tableName, dic, parameterlst,dates=False,init_index=0,fin_index=-1, voltage=230):
+    #better use Power1 instead of P1 for displaying, as it is more accurate
     if(isinstance(init_index,str) and dates==True):
         t0=dt.datetime.strptime(init_index,"%H:%M:%S").time()
         t0=dt.datetime.combine(dt.date.today(), t0)
@@ -270,13 +273,111 @@ def plot_graph(tableName, dic, parameterlst,dates=False,init_index=0,fin_index=-
         ax.xaxis_date()
         x_dates=[dt.datetime.strptime(val,"%m/%d/%y  %H:%M:%S.%f") for val in dic[tableName]["StringTime"][init_index:fin_index]]
         for parameterName in parameterlst:
-            plt.plot(x_dates,dic[tableName][parameterName][init_index:fin_index],label=parameterName)
+            if(parameterName in ['Power1','Power2','Power3']):
+                samples=dic[tableName]['I'+parameterName[5]][init_index:fin_index]
+                samples=np.array(samples)*(voltage/1000)
+            else:
+                samples=dic[tableName][parameterName][init_index:fin_index]
+            plt.plot(x_dates,samples,label=parameterName)
     else:
         for parameterName in parameterlst:
-            plt.plot(dic[tableName][parameterName][init_index:fin_index],label=parameterName)
+            if(parameterName in ['Power1','Power2','Power3']):
+                samples=dic[tableName]['I'+parameterName[5]][init_index:fin_index]
+                samples=np.array(samples)*(voltage/1000)
+            else:
+                samples=dic[tableName][parameterName][init_index:fin_index]
+            plt.plot(samples,label=parameterName)
     plt.legend()
     #plt.savefig("plots/general_graphs/"+tableName+" PAR="+str(parameterlst)+".png", format="png")
     plt.show()
+ 
+    
+def plot_devices_graph(list_devices,devices_indices,devices_names,UD1,UD2,UD3,dates=False,init_index=0,fin_index=-1, voltage=230):
+    #list devices is the list with all the devices with their data
+    #devices indices is the devices we want to print for- exmaple [0,6,7]
+    day=dt.datetime.strptime(UD1[0][0],"%m/%d/%y  %H:%M:%S.%f")
+    today=(day).strftime('%m/%d/%y ')
+    t0=dt.datetime.strptime(today+init_index,"%m/%d/%y %H:%M:%S")
+    t1=dt.datetime.strptime(today+fin_index,"%m/%d/%y %H:%M:%S")
+    
+    timestamp0 = dt.datetime.timestamp(t0)
+    timestamp1 = dt.datetime.timestamp(t1)
+    
+    timestamps_arr=[i for i in range(int(timestamp0),int(timestamp1))]
+    times_arr=[dt.datetime.fromtimestamp(i) for i in timestamps_arr]
+    
+    
+    if(len(devices_names)==1):
+        plt.title("power graph: "+str(devices_names[0]))
+    else:
+         plt.title("power graph: "+str(devices_names))
+    
+    #xfmt = md.DateFormatter('%d-%m  %H:%M:%S')
+    xfmt = md.DateFormatter('%H:%M')
+    plt.xticks( rotation= 80 )
+    ax=plt.gca()
+    ax.xaxis.set_major_formatter(xfmt)
+    ax.xaxis_date()
+    
+    x_dates=times_arr
+    samples=np.zeros((len(list_devices),len(x_dates)))
+    UD_arr=[UD1,UD2,UD3]
+    for UD in UD_arr:
+        for ele in UD:
+            if(ele[-1] in devices_indices):
+                t0=dt.datetime.strptime(ele[0],"%m/%d/%y  %H:%M:%S.%f")
+                t1=dt.datetime.strptime(ele[1],"%m/%d/%y  %H:%M:%S.%f")
+                cnt=0
+                for t in x_dates:
+                    if(t>=t0 and t<=t1):
+                        samples[ele[-1],cnt]+=list_devices[ele[-1]].current
+                    cnt+=1
+    cnt=0                  
+    for ind in devices_indices:
+        plt.plot(x_dates,samples[ind]*(voltage/1000),label=devices_names[cnt])
+        cnt+=1
+    plt.legend()
+    #plt.savefig("plots/general_graphs/"+tableName+" PAR="+str(parameterlst)+".png", format="png")
+    plt.show()   
+    
+
+
+def plotTotalCost(list_devices,devices_indices, voltage=230, price=0.5, currency_name='USD', months=12):
+    #display the data from the last year 
+    start=dt.datetime.today()
+    last_months=[]
+    total_amount=[0 for i in range(months)]
+    for i in range(months):
+        last_months.append((start.year,start.month))
+        start += relativedelta(months = -1)
+    
+    for ind in devices_indices:
+        for t_ind,t_str in enumerate(list_devices[ind].start_time_arr):
+            t_end=list_devices[ind].end_time_arr[t_ind]
+            t0=dt.datetime.strptime(t_str,"%m/%d/%y  %H:%M:%S.%f")
+            t1=dt.datetime.strptime(t_end,"%m/%d/%y  %H:%M:%S.%f")
+            if (t0.year,t0.month) in last_months:
+                i=0
+                for i in range(len(last_months)):
+                    if (t0.year,t0.month)==last_months[i]:
+                        break
+                total_amount[i]+=((t1-t0).total_seconds()/3600)*(voltage/1000)*price
+    lm=['(%d,%02d)'%(tup[0],tup[1]) for tup in last_months]
+    
+    
+    for i in range(len(lm)):
+        lm[i] = dt.datetime.strptime(lm[i],'(%Y,%m)')
+
+
+    ax=plt.gca()
+    xfmt = md.DateFormatter('%b, %Y')
+    ax.xaxis.set_major_formatter(xfmt)
+    ax.xaxis_date()
+    plt.xticks(lm,rotation=80)
+    
+    plt.bar(lm,total_amount,width=200/months)
+    plt.ylabel(currency_name)
+    plt.show()  
     
     
     
@@ -503,11 +604,12 @@ def time_score(t1_str,t2_str):
 
 
 class Device():
-    def __init__(self,current,current_THD,start_time_arr=[],phase=[1,0,0],phase_static=False):
+    def __init__(self,current,current_THD,start_time_arr=[],end_time_arr=[],phase=[1,0,0],phase_static=False):
         self.current=current
         self.current_THD=current_THD
         self.num_apperances=1
         self.start_time_arr=start_time_arr #start times of device in array
+        self.end_time_arr=end_time_arr
         self.fixed_power=True #whether the power is constant or changing over time
         self.phase=phase #whether the power is constant or changing over time
         self.phase_static=phase_static
@@ -530,6 +632,12 @@ class Device():
         self.phase[0]+=dev2.phase[0]
         self.phase[1]+=dev2.phase[1]
         self.phase[2]+=dev2.phase[2]
+    
+    def add_start_time(self,start_time):
+        self.start_time_arr.append(start_time)
+    def add_end_time(self,end_time):
+        self.end_time_arr.append(end_time)
+    
 
 def print_tensor(tensor):
     for vec in tensor:
@@ -614,6 +722,10 @@ if __name__ == "__main__":
     #plot_graph("Administrato_output1_table1",dictionary_2days,["I1","I2","I3"],True,0)
     #plot_graph("Administrato_output1_table4",dictionary_2days,["I1","I2","I3"],True,0)
     
+    print(dictionary_2days["Administrato_output1_table%d"%tablenum].keys())
+    plot_graph("Administrato_output1_table%d"%tablenum,dictionary_2days,["Power1","Power2", "Power3"],True)
+    
+    
     
     #print("I1 Edges timestamps:",timestamps_to_strings(dictionary_2days["Administrato_output1_table2"],edges_cleaner(find_edges_abs(dictionary_2days["Administrato_output1_table2"]["I1"],0.5,positive_flag=True,negative_flag=True),100)))
     #print("I2 Edges timestamps:",timestamps_to_strings(dictionary_2days["Administrato_output1_table2"],edges_cleaner(find_edges_abs(dictionary_2days["Administrato_output1_table2"]["I2"],0.5,positive_flag=True,negative_flag=True),0)))
@@ -692,6 +804,8 @@ if __name__ == "__main__":
                     device_index.append(i)
                     ele.append(i)
                     dev2.update(dev1)
+                    dev2.add_start_time(ele[0])
+                    dev2.add_end_time(ele[1])
                     match_flag=True
                     break
             if(match_flag==False):
@@ -699,6 +813,8 @@ if __name__ == "__main__":
                 list_devices.append(dev1)
                 device_index.append(len(list_devices)-1)
                 ele.append(len(list_devices)-1)
+                dev1.add_start_time(ele[0])
+                dev1.add_end_time(ele[1])
        
     
     
@@ -720,6 +836,10 @@ if __name__ == "__main__":
     time_score(UD1[0][0],UD1[5][0])
     time_score(UD1[0][0],UD1[0][0])
     
+    
+    #plot_devices_graph(list_devices,[0,5,2],["d0","d5","d2"],UD1,UD2,UD3,init_index="08:00:00",fin_index="16:00:00")
+    
+    plotTotalCost(list_devices,[0,1,2,3,4,5,6], price=0.5, currency_name='USD', months=6)
     
     #print(len(up_down_connector(M2,2,0)))
     #print(len(up_down_connector(M2,2,1)))
