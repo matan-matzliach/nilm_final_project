@@ -723,7 +723,7 @@ if __name__ == "__main__":
     #plot_graph("Administrato_output1_table4",dictionary_2days,["I1","I2","I3"],True,0)
     
     print(dictionary_2days["Administrato_output1_table%d"%tablenum].keys())
-    plot_graph("Administrato_output1_table%d"%tablenum,dictionary_2days,["Power1","Power2", "Power3"],True)
+    plot_graph("Administrato_output1_table%d"%tablenum,dictionary_2days,["Power1","kW L1"],True)
     
     
     
@@ -839,7 +839,7 @@ if __name__ == "__main__":
     
     #plot_devices_graph(list_devices,[0,5,2],["d0","d5","d2"],UD1,UD2,UD3,init_index="08:00:00",fin_index="16:00:00")
     
-    plotTotalCost(list_devices,[0,1,2,3,4,5,6], price=0.5, currency_name='USD', months=6)
+    #plotTotalCost(list_devices,[0,1,2,3,4,5,6], price=0.5, currency_name='USD', months=6)
     
     #print(len(up_down_connector(M2,2,0)))
     #print(len(up_down_connector(M2,2,1)))
