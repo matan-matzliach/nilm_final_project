@@ -1,3 +1,5 @@
+import pandas as pd
+from dateutil.relativedelta import relativedelta
 import sys
 import os
 import csv
@@ -234,7 +236,8 @@ def sync_voltage(table1,table2,num_of_samples):#num_of_samples will be between 1
     return indexes
     
 
-def plot_graph(tableName, dic, parameterlst,dates=False,init_index=0,fin_index=-1,stringo="",im_id=0):
+def plot_graph(tableName, dic, parameterlst,dates=False,init_index=0,fin_index=-1,stringo="",im_id=0,voltage=230):
+    #better use Power1 instead of P1 for displaying, as it is more accurate
     if(isinstance(init_index,str) and dates==True):
         t0=dt.datetime.strptime(init_index,"%H:%M:%S").time()
         t0=dt.datetime.combine(dt.date.today(), t0)
@@ -281,11 +284,22 @@ def plot_graph(tableName, dic, parameterlst,dates=False,init_index=0,fin_index=-
         x_dates=[dt.datetime.strptime(val,"%m/%d/%y  %H:%M:%S.%f") for val in dic[tableName]["StringTime"][init_index:fin_index]]
         print(len(x_dates))
         for parameterName in parameterlst:
-            plt.plot(x_dates,dic[tableName][parameterName][init_index:fin_index],label=parameterName)
+            if(parameterName in ['Power1','Power2','Power3']):
+                samples=dic[tableName]['I'+parameterName[5]][init_index:fin_index]
+                samples=np.array(samples)*(voltage/1000)
+            else:
+                samples=dic[tableName][parameterName][init_index:fin_index]
+            plt.plot(x_dates,samples,label=parameterName)
     else:
         for parameterName in parameterlst:
-            plt.plot(dic[tableName][parameterName][init_index:fin_index],label=parameterName)
+            if(parameterName in ['Power1','Power2','Power3']):
+                samples=dic[tableName]['I'+parameterName[5]][init_index:fin_index]
+                samples=np.array(samples)*(voltage/1000)
+            else:
+                samples=dic[tableName][parameterName][init_index:fin_index]
+            plt.plot(samples,label=parameterName)
     plt.legend()
+    plt.tight_layout()
     if os.path.exists("static/nilmgraph_"+stringo+".html"):
         os.remove("static/nilmgraph_"+stringo+".html")
     plt.savefig("static/plots/general_graphs/"+stringo+".png", format="png")
@@ -306,7 +320,133 @@ def plot_graph(tableName, dic, parameterlst,dates=False,init_index=0,fin_index=-
     #plt.show()
     return "static/plots/general_graphs/"+stringo+".png"
     
+def plot_devices_graph(list_devices,devices_indices,devices_names,UD1,UD2,UD3,dates=False,init_index=0,fin_index=-1, voltage=230):
+    #list devices is the list with all the devices with their data
+    #devices indices is the devices we want to print for- exmaple [0,6,7]
+    day=dt.datetime.strptime(UD1[0][0],"%m/%d/%y  %H:%M:%S.%f")
+    today=(day).strftime('%m/%d/%y ')
+    t0=dt.datetime.strptime(today+init_index,"%m/%d/%y %H:%M:%S")
+    t1=dt.datetime.strptime(today+fin_index,"%m/%d/%y %H:%M:%S")
     
+    timestamp0 = dt.datetime.timestamp(t0)
+    timestamp1 = dt.datetime.timestamp(t1)
+    
+    timestamps_arr=[i for i in range(int(timestamp0),int(timestamp1))]
+    times_arr=[dt.datetime.fromtimestamp(i) for i in timestamps_arr]
+    
+    
+    if(len(devices_names)==1):
+        plt.title("power graph: "+str(devices_names[0]))
+    else:
+         plt.title("power graph: "+str(devices_names))
+    
+    #xfmt = md.DateFormatter('%d-%m  %H:%M:%S')
+    xfmt = md.DateFormatter('%H:%M')
+    plt.xticks( rotation= 80 )
+    ax=plt.gca()
+    ax.xaxis.set_major_formatter(xfmt)
+    ax.xaxis_date()
+    
+    x_dates=times_arr
+    samples=np.zeros((len(list_devices),len(x_dates)))
+    UD_arr=[UD1,UD2,UD3]
+    for UD in UD_arr:
+        for ele in UD:
+            if(ele[-1] in devices_indices):
+                t0=dt.datetime.strptime(ele[0],"%m/%d/%y  %H:%M:%S.%f")
+                t1=dt.datetime.strptime(ele[1],"%m/%d/%y  %H:%M:%S.%f")
+                cnt=0
+                for t in x_dates:
+                    if(t>=t0 and t<=t1):
+                        samples[int(ele[-1]),int(cnt)]+=list_devices[int(ele[-1])].current
+                    cnt+=1
+    cnt=0                  
+    for ind in devices_indices:
+        plt.plot(x_dates,samples[ind]*(voltage/1000),label=devices_names[cnt])
+        cnt+=1
+    plt.legend()
+    plt.tight_layout()
+    #plt.savefig("plots/general_graphs/"+tableName+" PAR="+str(parameterlst)+".png", format="png")
+    #plt.show()
+    
+    if os.path.exists("static/nilmgraph_"+"devices"+".html"):
+        os.remove("static/nilmgraph_"+"devices"+".html")
+    plt.savefig("static/plots/general_graphs/"+"devices"+".png", format="png")
+    cmd=""
+    cmd+="echo ^<img src=\"{{url_for('static',filename='/plots/general_graphs/"+"devices"+".png')}}\"/^> >"
+    cmd2=""
+    cmd2+="templates/nilmgraph_"
+    cmd2+="devices"
+    cmd2+=".html"
+    print(cmd+cmd2)
+    if(os.system(cmd+cmd2)):
+        print("FAIL")
+    
+    
+    plt.cla()
+    plt.clf()
+    plt.close()
+    #plt.show()
+    return "static/plots/general_graphs/"+"devices"+".png"
+
+
+def plotTotalCost(list_devices,devices_indices, voltage=230, price=0.5, currency_name='USD', months=12):
+    #display the data from the last year 
+    start=dt.datetime.today()
+    last_months=[]
+    total_amount=[0 for i in range(months)]
+    for i in range(months):
+        last_months.append((start.year,start.month))
+        start += relativedelta(months = -1)
+    
+    for ind in devices_indices:
+        for t_ind,t_str in enumerate(list_devices[ind].start_time_arr):
+            t_end=list_devices[ind].end_time_arr[t_ind]
+            t0=dt.datetime.strptime(t_str,"%m/%d/%y  %H:%M:%S.%f")
+            t1=dt.datetime.strptime(t_end,"%m/%d/%y  %H:%M:%S.%f")
+            if (t0.year,t0.month) in last_months:
+                i=0
+                for i in range(len(last_months)):
+                    if (t0.year,t0.month)==last_months[i]:
+                        break
+                total_amount[i]+=((t1-t0).total_seconds()/3600)*(voltage/1000)*price
+    lm=['(%d,%02d)'%(tup[0],tup[1]) for tup in last_months]
+    
+    
+    for i in range(len(lm)):
+        lm[i] = dt.datetime.strptime(lm[i],'(%Y,%m)')
+
+
+    ax=plt.gca()
+    xfmt = md.DateFormatter('%b, %Y')
+    ax.xaxis.set_major_formatter(xfmt)
+    ax.xaxis_date()
+    plt.xticks(lm,rotation=80)
+    
+    plt.bar(lm,total_amount,width=200/months)
+    plt.ylabel(currency_name)
+    plt.tight_layout()
+    #plt.show()
+    
+    if os.path.exists("static/nilmgraph_"+"cost"+".html"):
+        os.remove("static/nilmgraph_"+"cost"+".html")
+    plt.savefig("static/plots/general_graphs/"+"cost"+".png", format="png")
+    cmd=""
+    cmd+="echo ^<img src=\"{{url_for('static',filename='/plots/general_graphs/"+"cost"+".png')}}\"/^> >"
+    cmd2=""
+    cmd2+="templates/nilmgraph_"
+    cmd2+="cost"
+    cmd2+=".html"
+    print(cmd+cmd2)
+    if(os.system(cmd+cmd2)):
+        print("FAIL")
+    
+    
+    plt.cla()
+    plt.clf()
+    plt.close()
+    #plt.show()
+    return "static/plots/general_graphs/"+"cost"+".png"
     
 
 
@@ -531,10 +671,11 @@ def time_score(t1_str,t2_str):
 
 
 class Device():
-    def __init__(self,current,current_THD,start_time_arr=[],phase=[1,0,0],phase_static=False):
+    def __init__(self,current,current_THD,start_time_arr=[],end_time_arr=[],phase=[1,0,0],phase_static=False):
         self.current=current
         self.current_THD=current_THD
         self.num_apperances=1
+        self.end_time_arr=end_time_arr
         self.start_time_arr=start_time_arr #start times of device in array
         self.fixed_power=True #whether the power is constant or changing over time
         self.phase=phase #whether the power is constant or changing over time
@@ -559,6 +700,11 @@ class Device():
         self.phase[0]+=dev2.phase[0]
         self.phase[1]+=dev2.phase[1]
         self.phase[2]+=dev2.phase[2]
+    
+    def add_start_time(self,start_time):
+        self.start_time_arr.append(start_time)
+    def add_end_time(self,end_time):
+        self.end_time_arr.append(end_time)
     def set_name(self,_name):
         self.name=_name
     def tojson(self):
@@ -585,77 +731,8 @@ app=Flask(__name__) #setup the application
 #create index route to not go imidatly to 404
 @app.route('/app',methods=['POST','GET'])
 def form():
-    tablenum=2
-    parse_all_data(dictionary,dictionary_2days)
-    tables_list=list(dictionary.keys()) #names of all the tables
-    print(tables_list)
-    for i in range(len(tables_list)):
-        print(str(i)+"   "+tables_list[i])
-    #print("I1 Edges timestamps:",timestamps_to_strings(dictionary_2days["Administrato_output1_table2"],edges_cleaner(find_edges_abs(dictionary_2days["Administrato_output1_table2"]["I1"],0.5,positive_flag=True,negative_flag=True),100)))
-    #print("I2 Edges timestamps:",timestamps_to_strings(dictionary_2days["Administrato_output1_table2"],edges_cleaner(find_edges_abs(dictionary_2days["Administrato_output1_table2"]["I2"],0.5,positive_flag=True,negative_flag=True),0)))
-    #print("I3 Edges timestamps:",timestamps_to_strings(dictionary_2days["Administrato_output1_table2"],edges_cleaner(find_edges_abs(dictionary_2days["Administrato_output1_table2"]["I3"],0.5,positive_flag=True,negative_flag=True),0)))
-    
-    
-    #print("I1 Edges timestamps:",timestamps_to_strings2(dictionary_2days["Administrato_output1_table2"],edges_cleaner2(find_edges_abs_plus_size(dictionary_2days["Administrato_output1_table2"]["I1"],0.5,positive_flag=True,negative_flag=True),0)))
-    #print("I3 Edges timestamps:",timestamps_to_strings2(dictionary_2days["Administrato_output1_table2"],edges_cleaner2(find_edges_abs_plus_size(dictionary_2days["Administrato_output1_table2"]["I3"],0.5,positive_flag=True,negative_flag=True),0)))
-    M1=timestamps_to_strings2(dictionary_2days["Administrato_output1_table%d"%tablenum],edges_cleaner2(find_edges_abs_plus_size(dictionary_2days["Administrato_output1_table%d"%tablenum]["I1"],0.5),0))
-    M2=timestamps_to_strings2(dictionary_2days["Administrato_output1_table%d"%tablenum],edges_cleaner2(find_edges_abs_plus_size(dictionary_2days["Administrato_output1_table%d"%tablenum]["I2"],0.5),0))
-    M3=timestamps_to_strings2(dictionary_2days["Administrato_output1_table%d"%tablenum],edges_cleaner2(find_edges_abs_plus_size(dictionary_2days["Administrato_output1_table%d"%tablenum]["I3"],0.5),0))
-    #print("up_down_connector M1 : ",up_down_connector(M1,2,1))
-    #print("up_down_connector M2 : ",up_down_connector(M2,2,1))
-    #print("up_down_connector M3 : ",up_down_connector(M3,2,1))
-    
-
-    
-
-    res1=up_down_connector(M1,2,1)
-    res2=up_down_connector(M2,2,1)
-    res3=up_down_connector(M3,2,1)
-
-    nonpairs1=res1[0]   
-    nonpairs2=res2[0]   
-    nonpairs3=res3[0] 
-   
-    res1=res1[1:]
-    res2=res2[1:]
-    res3=res3[1:]
-    
-    
-    
-    UD1=filter_duration(res1, 4,5,50000)
-    UD2=filter_duration(res2, 4,5,50000)
-    UD3=filter_duration(res3, 4,5,50000)
-    
-    addNonPairs(UD1,nonpairs1,dictionary_2days["Administrato_output1_table%d"%tablenum]["StringTime"][-1],len(dictionary_2days["Administrato_output1_table%d"%tablenum]["StringTime"])-1)
-    addNonPairs(UD2,nonpairs2,dictionary_2days["Administrato_output1_table%d"%tablenum]["StringTime"][-1],len(dictionary_2days["Administrato_output1_table%d"%tablenum]["StringTime"])-1)
-    addNonPairs(UD3,nonpairs3,dictionary_2days["Administrato_output1_table%d"%tablenum]["StringTime"][-1],len(dictionary_2days["Administrato_output1_table%d"%tablenum]["StringTime"])-1)
-    
-    
-    
-    
-    UD1=THD_avg_add(UD1,dictionary_2days["Administrato_output1_table%d"%tablenum]["I1 THD"])
-    UD2=THD_avg_add(UD2,dictionary_2days["Administrato_output1_table%d"%tablenum]["I2 THD"])
-    UD3=THD_avg_add(UD3,dictionary_2days["Administrato_output1_table%d"%tablenum]["I3 THD"])
-    UD_arr=[UD1,UD2,UD3]
-    
-    phase1=[1,0,0]
-    phase2=[0,1,0]
-    phase3=[0,0,1]
-    phase_arr=[phase1,phase2,phase3]
-    eps_THD_arr=[5,2,1]
-    
-    
-    '''print("up_down_connector UD1 : ")
-    print_tensor(UD1)
-    print()
-    print("up_down_connector UD2 : ")
-    print_tensor(UD2)
-    print()
-    print("up_down_connector UD3 : ")
-    print_tensor(UD3)'''
-    
-    new_devs=list()
-    dev1=''
+    for i in range(150):#delay to make the line "device added succesfully apear longer"
+        print(i)
     for phase_ind in range(len(UD_arr)):    
         for ele in UD_arr[phase_ind]: #UD1 / UD2 / UD3
             dev1=Device(current=0.5*(ele[2]-ele[3]),current_THD=ele[7],phase=phase_arr[phase_ind].copy())
@@ -665,18 +742,14 @@ def form():
                     device_index.append(i)
                     ele.append(i)
                     dev2.update(dev1)
+                    dev2.add_start_time(ele[0])
+                    dev2.add_end_time(ele[1])
                     match_flag=True
                     break
             if(match_flag==False):
                 #print("ENTERED")
                 #This is where we interact with the user and ask what device was used for the first time
-                #new_devs.append(dev1.tojson())
                 return jsonify({'needed':'yes','dev':dev1.tojson()})
-                #list_devices.append(dev1)
-                #device_index.append(len(list_devices)-1)
-                #ele.append(len(list_devices)-1)
-    #if len(new_devs)>0:
-    #    return jsonify({'needed':'yes','posts':new_devs})
     return jsonify({'needed':'no','dev':dev1.tojson()})
 @app.route('/add_device_json',methods=['GET','POST'])
 def add():
@@ -736,7 +809,6 @@ def show_i():
     return render_template("nilmgraph_I.html")
 @app.route('/get_device_list' , methods=['GET'])
 def get_device_list():
-    #ADD
     #return jsonify({'devices':[i.tojson() for i in list_devices]})
     return jsonify([i.tojson() for i in list_devices])
 @app.route('/nilmgraph/I THD',methods=['GET'])
@@ -748,8 +820,8 @@ def show_p_kvar():
 @app.route('/nilmgraph/P_KW',methods=['GET'])
 def show_p_kw():
     return render_template("nilmgraph_P_KW.html")
-@app.route('/nilmgraph',methods=['POST'])
-def graph_form_post():
+@app.route('/nilmgraph_power',methods=['POST'])
+def graph_form_post_power():
     start=str(request.form['starttime'])
     end=str(request.form['endtime'])
     parse_all_data(dictionary,dictionary_2days)
@@ -757,14 +829,103 @@ def graph_form_post():
     tablenum=2
     print("HELLO")
     ############get init index and fin index form user
-    plot_graph("Administrato_output1_table%d"%tablenum,dictionary_2days,["I1 THD","I2 THD","I3 THD"],True,init_index=start,fin_index=end,stringo="I_THD")
-    plot_graph("Administrato_output1_table%d"%tablenum,dictionary_2days,["kW L1","kW L2","kW L3"],True,init_index=start,fin_index=end,stringo="P_KW")
-    plot_graph("Administrato_output1_table%d"%tablenum,dictionary_2days,["I1","I2","I3"],True,init_index=start,fin_index=end,stringo="I")
-    plot_graph("Administrato_output1_table%d"%tablenum,dictionary_2days,["kvar L1","kvar L2","kvar L3"],True,init_index=start,fin_index=end,stringo="P_KVAR")
-    #return render_template("nilmgraph.html")
+    plot_graph("Administrato_output1_table%d"%tablenum,dictionary_2days,["Power1","Power2","Power3"],True,init_index=start,fin_index=end,stringo="Power")
     return jsonify({})
-
+@app.route('/nilmgraph_devices',methods=['POST'])
+def graph_form_post_devices():
+    print(UD1)
+    print(UD2)
+    print(UD3)
+    r=request.get_json()
+    start=str(r['starttime'])
+    end=str(r['endtime'])
+    parse_all_data(dictionary,dictionary_2days)
+    tables_list=list(dictionary.keys()) #names of all the tables    
+    tablenum=2
+    print("HELLO")
+    curindxs=[]
+    devsplot=r['devices_to_plot']
+    print(devsplot)
+    for i in devsplot:
+        for j in range(len(list_devices)):
+            if(i==list_devices[j].name):
+                curindxs.append(j)
+    print(curindxs)
+    ############get init index and fin index form user
+    plot_devices_graph(list_devices,curindxs,devsplot,UD1,UD2,UD3,init_index=start,fin_index=end)
+    return jsonify({})
+@app.route('/nilmgraph_cost',methods=['POST'])
+def graph_form_post_cost():
+    r=request.get_json()
+    price=r['price']
+    months=r['months']
+    currency=r['currency']
+    parse_all_data(dictionary,dictionary_2days)
+    tables_list=list(dictionary.keys()) #names of all the tables    
+    tablenum=2
+    print("HELLO")
+    ############get init index and fin index form user
+    plotTotalCost(list_devices,device_index, price=price, currency_name=currency, months=months)
+    return jsonify({})
 if __name__ == "__main__":
+    tablenum=2
+    parse_all_data(dictionary,dictionary_2days)
+    tables_list=list(dictionary.keys()) #names of all the tables
+    print(tables_list)
+    for i in range(len(tables_list)):
+        print(str(i)+"   "+tables_list[i])
+    #print("I1 Edges timestamps:",timestamps_to_strings(dictionary_2days["Administrato_output1_table2"],edges_cleaner(find_edges_abs(dictionary_2days["Administrato_output1_table2"]["I1"],0.5,positive_flag=True,negative_flag=True),100)))
+    #print("I2 Edges timestamps:",timestamps_to_strings(dictionary_2days["Administrato_output1_table2"],edges_cleaner(find_edges_abs(dictionary_2days["Administrato_output1_table2"]["I2"],0.5,positive_flag=True,negative_flag=True),0)))
+    #print("I3 Edges timestamps:",timestamps_to_strings(dictionary_2days["Administrato_output1_table2"],edges_cleaner(find_edges_abs(dictionary_2days["Administrato_output1_table2"]["I3"],0.5,positive_flag=True,negative_flag=True),0)))
+    
+    
+    #print("I1 Edges timestamps:",timestamps_to_strings2(dictionary_2days["Administrato_output1_table2"],edges_cleaner2(find_edges_abs_plus_size(dictionary_2days["Administrato_output1_table2"]["I1"],0.5,positive_flag=True,negative_flag=True),0)))
+    #print("I3 Edges timestamps:",timestamps_to_strings2(dictionary_2days["Administrato_output1_table2"],edges_cleaner2(find_edges_abs_plus_size(dictionary_2days["Administrato_output1_table2"]["I3"],0.5,positive_flag=True,negative_flag=True),0)))
+    M1=timestamps_to_strings2(dictionary_2days["Administrato_output1_table%d"%tablenum],edges_cleaner2(find_edges_abs_plus_size(dictionary_2days["Administrato_output1_table%d"%tablenum]["I1"],0.5),0))
+    M2=timestamps_to_strings2(dictionary_2days["Administrato_output1_table%d"%tablenum],edges_cleaner2(find_edges_abs_plus_size(dictionary_2days["Administrato_output1_table%d"%tablenum]["I2"],0.5),0))
+    M3=timestamps_to_strings2(dictionary_2days["Administrato_output1_table%d"%tablenum],edges_cleaner2(find_edges_abs_plus_size(dictionary_2days["Administrato_output1_table%d"%tablenum]["I3"],0.5),0))
+    #print("up_down_connector M1 : ",up_down_connector(M1,2,1))
+    #print("up_down_connector M2 : ",up_down_connector(M2,2,1))
+    #print("up_down_connector M3 : ",up_down_connector(M3,2,1))
+    
+
+    
+
+    res1=up_down_connector(M1,2,1)
+    res2=up_down_connector(M2,2,1)
+    res3=up_down_connector(M3,2,1)
+
+    nonpairs1=res1[0]   
+    nonpairs2=res2[0]   
+    nonpairs3=res3[0] 
+   
+    res1=res1[1:]
+    res2=res2[1:]
+    res3=res3[1:]
+    
+    
+    
+    UD1=filter_duration(res1, 4,5,50000)
+    UD2=filter_duration(res2, 4,5,50000)
+    UD3=filter_duration(res3, 4,5,50000)
+    
+    addNonPairs(UD1,nonpairs1,dictionary_2days["Administrato_output1_table%d"%tablenum]["StringTime"][-1],len(dictionary_2days["Administrato_output1_table%d"%tablenum]["StringTime"])-1)
+    addNonPairs(UD2,nonpairs2,dictionary_2days["Administrato_output1_table%d"%tablenum]["StringTime"][-1],len(dictionary_2days["Administrato_output1_table%d"%tablenum]["StringTime"])-1)
+    addNonPairs(UD3,nonpairs3,dictionary_2days["Administrato_output1_table%d"%tablenum]["StringTime"][-1],len(dictionary_2days["Administrato_output1_table%d"%tablenum]["StringTime"])-1)
+    
+    
+    
+    
+    UD1=THD_avg_add(UD1,dictionary_2days["Administrato_output1_table%d"%tablenum]["I1 THD"])
+    UD2=THD_avg_add(UD2,dictionary_2days["Administrato_output1_table%d"%tablenum]["I2 THD"])
+    UD3=THD_avg_add(UD3,dictionary_2days["Administrato_output1_table%d"%tablenum]["I3 THD"])
+    UD_arr=[UD1,UD2,UD3]
+    
+    phase1=[1,0,0]
+    phase2=[0,1,0]
+    phase3=[0,0,1]
+    phase_arr=[phase1,phase2,phase3]
+    eps_THD_arr=[5,2,1]
     list_devices=list()
     device_index=list()
     app.run(debug=True,use_reloader=False, host='0.0.0.0',port=5000,ssl_context='adhoc')
