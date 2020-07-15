@@ -629,7 +629,7 @@ class Device():
         
     def similarGrade(self,dev2):
         grade=0
-        alpha=[6,3,1]
+        alpha=[6,3,0.5,0.5]
         grade+=alpha[0]*max(5-abs(self.current-dev2.current),0)
         grade+=alpha[1]*max(5-0.5*abs(self.current_THD-dev2.current_THD),0)
         
@@ -640,6 +640,12 @@ class Device():
         
         if(grade>50):
             grade+=alpha[2]*(np.clip(avg_time_score,26,36)-26)
+        
+        num_phase1=sum(self.phase)
+        num_phase2=sum(dev2.phase)
+        dist=5-5*((sum([(self.phase[i]/num_phase1-dev2.phase[i]/num_phase2)**2 for i in range(3)]))**0.5)/(2**0.5)
+        
+        grade+=alpha[3]*dist
         
         if(dev2.phase_static==True and sum([1 if (self.phase[i]+dev2.phase[i])>0 else 0 for i in range(len(dev2.phase))]))>1:
             #if it is on the same phase all the time and the new device is from another phase
@@ -821,7 +827,7 @@ if __name__ == "__main__":
     list_devices=list()
     device_index=list()
     
-    max_grade_arr=[70,80,70]
+    max_grade_arr=[70,75,70]
     for phase_ind in range(len(UD_arr)):    
         for ele in UD_arr[phase_ind]: #UD1 / UD2 / UD3
             dev1=Device(current=0.5*(ele[2]-ele[3]),start_time_arr=[ele[0]],end_time_arr=[ele[1]],current_THD=ele[7],phase=phase_arr[phase_ind].copy())
