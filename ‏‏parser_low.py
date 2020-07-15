@@ -585,20 +585,20 @@ def get_time_difference(t1_str,t2_str):
     return time_diff
     
     
+
 def time_score(t1_str,t2_str):
     #returns the score that 2 devices recieve based on the hour of the day
     #minimum score 0
     #maximum score 36
-    #time_diff of 1 second score is 16
-    #time_diff of 1 hour score is 4
+    #time_diff of 1 second score is 20
+    #time_diff of 1 hour score is 32
     time_diff=get_time_difference(t1_str,t2_str)
     initial=dt.timedelta(hours=12)
     score=0
     while(time_diff<initial):
         score+=1
         initial/=2
-    print(score)
-    
+    return 36-score    
     
 
 
@@ -623,6 +623,33 @@ class Device():
             if(abs(self.current_THD-dev2.current_THD)<=eps_THD):
                 return True
         return False
+    
+    
+    
+        
+    def similarGrade(self,dev2):
+        grade=0
+        alpha=[6,3,1]
+        grade+=alpha[0]*max(5-abs(self.current-dev2.current),0)
+        grade+=alpha[1]*max(5-0.5*abs(self.current_THD-dev2.current_THD),0)
+        
+        avg_time_score=0
+        for i in range(len(self.start_time_arr)):
+            avg_time_score+=time_score(self.start_time_arr[i],dev2.start_time_arr[0])
+        avg_time_score/=len(self.start_time_arr)
+        
+        if(grade>50):
+            grade+=alpha[2]*(np.clip(avg_time_score,26,36)-26)
+        
+        if(dev2.phase_static==True and sum([1 if (self.phase[i]+dev2.phase[i])>0 else 0 for i in range(len(dev2.phase))]))>1:
+            #if it is on the same phase all the time and the new device is from another phase
+            grade*=0
+        if(dev2.current_THD>35.69 and dev2.current_THD<35.71):
+            print('------------')
+            print(self.start_time_arr)
+            print(alpha[2]*(np.clip(avg_time_score,26,36)-26)/2)
+            print(grade)
+        return grade/sum(alpha)*20
 
     def update(self,dev2):
         n=self.num_apperances
@@ -794,27 +821,33 @@ if __name__ == "__main__":
     list_devices=list()
     device_index=list()
     
-    
+    max_grade_arr=[70,80,70]
     for phase_ind in range(len(UD_arr)):    
         for ele in UD_arr[phase_ind]: #UD1 / UD2 / UD3
-            dev1=Device(current=0.5*(ele[2]-ele[3]),current_THD=ele[7],phase=phase_arr[phase_ind].copy())
+            dev1=Device(current=0.5*(ele[2]-ele[3]),start_time_arr=[ele[0]],end_time_arr=[ele[1]],current_THD=ele[7],phase=phase_arr[phase_ind].copy())
             match_flag=False
+            max_grade=0
+            max_i=0
             for i,dev2 in enumerate(list_devices):
-                if(dev1.similar(dev2,eps_curr=1,eps_THD=eps_THD_arr[phase_ind])):
-                    device_index.append(i)
-                    ele.append(i)
-                    dev2.update(dev1)
-                    dev2.add_start_time(ele[0])
-                    dev2.add_end_time(ele[1])
-                    match_flag=True
-                    break
-            if(match_flag==False):
+                current_grade=dev2.similarGrade(dev1)
+                if(current_grade>=max_grade):
+                    max_grade=current_grade
+                    max_i=i
+            if(max_grade>max_grade_arr[phase_ind]):
+                dev2=list_devices[max_i]
+                device_index.append(max_i)
+                ele.append(max_i)
+                dev2.update(dev1)
+                dev2.add_start_time(ele[0])
+                dev2.add_end_time(ele[1])
+                match_flag=True
+            else:
                 #This is where we interact with the user and ask what device was used for the first time
                 list_devices.append(dev1)
                 device_index.append(len(list_devices)-1)
                 ele.append(len(list_devices)-1)
-                dev1.add_start_time(ele[0])
-                dev1.add_end_time(ele[1])
+                #dev1.add_start_time(ele[0])
+                #dev1.add_end_time(ele[1])
        
     
     
@@ -833,8 +866,8 @@ if __name__ == "__main__":
     print(device_index)
     
     
-    time_score(UD1[0][0],UD1[5][0])
-    time_score(UD1[0][0],UD1[0][0])
+    #time_score(UD1[0][0],UD1[5][0])
+    #time_score(UD1[0][0],UD1[0][0])
     
     
     #plot_devices_graph(list_devices,[0,5,2],["d0","d5","d2"],UD1,UD2,UD3,init_index="08:00:00",fin_index="16:00:00")
