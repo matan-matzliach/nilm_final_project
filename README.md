@@ -14,6 +14,9 @@ Graph of all phase 1 devices power that the system detected:
 <img src="https://i.ibb.co/sJn5pYs/image.png" width="500" title="hover text">
 
 
+Homepage of the app:
+
+<img src="https://i.ibb.co/bKvVkNd/image.png" title="hover text">
 
 
 
