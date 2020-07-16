@@ -361,7 +361,7 @@ def plotTotalCost(list_devices,devices_indices, voltage=230, price=0.5, currency
                 for i in range(len(last_months)):
                     if (t0.year,t0.month)==last_months[i]:
                         break
-                total_amount[i]+=((t1-t0).total_seconds()/3600)*(voltage/1000)*price
+                total_amount[i]+=((t1-t0).total_seconds()/3600)*(list_devices[ind].current*voltage/1000)*price
     lm=['(%d,%02d)'%(tup[0],tup[1]) for tup in last_months]
     
     
@@ -674,7 +674,7 @@ class Device():
 
 def print_tensor(tensor):
     for vec in tensor:
-        print(vec)
+        print("Start: %s || End: %s || Device: %d"%(vec[0],vec[1],vec[-1]))
 
 
 def print_devices(list_devs):
@@ -756,7 +756,7 @@ if __name__ == "__main__":
     #plot_graph("Administrato_output1_table4",dictionary_2days,["I1","I2","I3"],True,0)
     
     print(dictionary_2days["Administrato_output1_table%d"%tablenum].keys())
-    plot_graph("Administrato_output1_table%d"%tablenum,dictionary_2days,["Power1","kW L1"],True)
+    plot_graph("Administrato_output1_table%d"%tablenum,dictionary_2days,["Power1"],True)
     
     
     
@@ -857,15 +857,15 @@ if __name__ == "__main__":
        
     
     
-    
-    print("up_down_connector UD1 : ")
+    print()
+    print("Events phase 1: ")
     print_tensor(UD1)
-    print("up_down_connector UD2 : ")
+    print("Events phase 2: ")
     print_tensor(UD2)
-    print("up_down_connector UD3 : ")
+    print("Events phase 3: ")
     print_tensor(UD3)
     
-    
+    print()
     print("===================")
     print("Number of devices: %d"%len(list_devices))
     print_devices(list_devices)
@@ -876,9 +876,9 @@ if __name__ == "__main__":
     #time_score(UD1[0][0],UD1[0][0])
     
     
-    #plot_devices_graph(list_devices,[0,5,2],["d0","d5","d2"],UD1,UD2,UD3,init_index="08:00:00",fin_index="16:00:00")
+    plot_devices_graph(list_devices,[0,1,2,3],["Microwave","Light","Oven","Heater"],UD1,UD2,UD3,init_index="08:00:00",fin_index="16:00:00")
     
-    #plotTotalCost(list_devices,[0,1,2,3,4,5,6], price=0.5, currency_name='USD', months=6)
+    plotTotalCost(list_devices,[0,1,2,3], price=0.1, currency_name='USD', months=6)
     
     #print(len(up_down_connector(M2,2,0)))
     #print(len(up_down_connector(M2,2,1)))
