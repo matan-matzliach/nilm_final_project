@@ -314,7 +314,8 @@ def plot_graph(tableName, dic, parameterlst,dates=False,init_index=0,fin_index=-
             
             plt.plot(samples,label=parameterName)
     plt.legend()
-    #plt.ylabel('KW')
+    if('Power1' in parameterlst or 'Power2' in parameterlst or 'Power3' in parameterlst):
+        plt.ylabel('KW')
     #plt.savefig("plots/general_graphs/"+tableName+" PAR="+str(parameterlst)+".png", format="png")
     plt.show()
  
