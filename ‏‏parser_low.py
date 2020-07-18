@@ -11,7 +11,8 @@ from dateutil.relativedelta import relativedelta
 
 
 def csvToDict(relative_path):
-    #converts csv file to matrix
+    '''converts csv file wiht the relative path to tensor'''
+    
     table=dict()
     num_to_header=dict()
     if(not(os.path.exists(os.path.abspath(relative_path)))):
@@ -47,6 +48,11 @@ def csvToDict(relative_path):
 
 
 def add_tables_to_dict(prefix_str,relative_path,dictionary):
+    '''reading tables into the dictionary data structure from the csv
+    prefix_str is the name of the table to save as the key
+    relative_path is the relative path to the csv file
+    
+    '''
     output_arr=["1","2","3"]
     table_arr=["1","2","3","4"]
     for output in output_arr:
@@ -59,7 +65,12 @@ def add_tables_to_dict(prefix_str,relative_path,dictionary):
 
 
 def parse_all_data(dictionary,dictionary_2):
-    #first_session
+    '''parses all the samples data into dictionary and dictionary_2
+    where dictionary is the old format samples
+    dictionary_2 is the new format samples
+    '''
+        
+    '''#first_session
     add_tables_to_dict("s1_alloff","./firstSession/alloff/low/output",dictionary)
     add_tables_to_dict("s1_alloffwithairconditionoutsideofbsharasroom","./firstSession/alloffwithairconditionoutsideofbsharasroom/low/output",dictionary)
     add_tables_to_dict("s1_allofwithbsharasaircondition","./firstSession/allofwithbsharasaircondition/low/output",dictionary)
@@ -90,7 +101,7 @@ def parse_all_data(dictionary,dictionary_2):
     add_tables_to_dict("s4_kettelandlight","./forthSession/kettelandlight/low/output",dictionary)
     add_tables_to_dict("s4_mw","./forthSession/mw/low/output",dictionary)
     add_tables_to_dict("s4_onelightAndAircondi","./forthSession/onelightAndAircondi/low/output",dictionary)
-    add_tables_to_dict("s4_twolightandAirco","./forthSession/twolightandAirco/low/output",dictionary)
+    add_tables_to_dict("s4_twolightandAirco","./forthSession/twolightandAirco/low/output",dictionary)'''
     
     
     #full_2_days
@@ -98,7 +109,7 @@ def parse_all_data(dictionary,dictionary_2):
     
     
 
-def diff_all_data(dictionary,difdictionary,prefixlist):
+'''def diff_all_data(dictionary,difdictionary,prefixlist):
     for i in range(len(prefixlist)):
         for j in prefixlist[i:]:
             print(prefixlist[i]+" and "+j)
@@ -181,38 +192,44 @@ def diff_all_data(dictionary,difdictionary,prefixlist):
             difdictionary[j+"_P3 - "+prefixlist[i]+"_P3"]=[-i for i in difdictionary[prefixlist[i]+"_P3 - "+j+"_P3"]]
             sumdictionary[j+"_P3 + "+prefixlist[i]+"_P3"]=sumdictionary[prefixlist[i]+"_P3 + "+j+"_P3"]
             
-        
+'''     
 
 dictionary=dict()
 dictionary_2days=dict()
 prefixlist=[]
 difdictionary=dict()
 sumdictionary=dict()
-def get_table_titles(table):
-    return dictionary[table][0].keys()
 
-def get_table_data(table):
+'''def get_table_titles(table):
+    #returns the table titles/samplings categories
+    return dictionary[table][0].keys()'''
+
+'''def get_table_data(table):
+    #returns the table from a dictionary
     return dictionary[table]
+'''
 
-def find_difference_between_Data_in_tabels(table1,table2,num_of_samples,index1,index2):#num_of_samples<=64
+'''def find_difference_between_Data_in_tabels(table1,table2,num_of_samples,index1,index2):#num_of_samples<=64
     l=[]
     adjusted_row1=dictionary[table1][0]['Data'][index1:index1+num_of_samples]
     adjusted_row2=dictionary[table2][0]['Data'][index2:index2+num_of_samples]
     for i in range(num_of_samples):
         l.append(adjusted_row1[i]-adjusted_row2[i])
     return l
-def find_sum_of_Data_in_tabels(table1,table2,num_of_samples,index1,index2):#num_of_samples<=64
+'''
+
+'''def find_sum_of_Data_in_tabels(table1,table2,num_of_samples,index1,index2):#num_of_samples<=64
     l=[]
     adjusted_row1=dictionary[table1][0]['Data'][index1:index1+num_of_samples]
     adjusted_row2=dictionary[table2][0]['Data'][index2:index2+num_of_samples]
     for i in range(num_of_samples):
         l.append(adjusted_row1[i]+adjusted_row2[i])
     return l
+'''
 
-
-def mean_square(l1,l2,num_of_samples):
-    return sum([(l1[i]-l2[i])**2 for i in range(num_of_samples)])/num_of_samples
-def sync_voltage(table1,table2,num_of_samples):#num_of_samples will be between 1 and 64
+'''def mean_square(l1,l2,num_of_samples):
+    return sum([(l1[i]-l2[i])**2 for i in range(num_of_samples)])/num_of_samples'''
+'''def sync_voltage(table1,table2,num_of_samples):#num_of_samples will be between 1 and 64
     #we used the fact that a cycle is 64 samples because the sample rate is 50HZ and we can see from the tables that it is close to that value for each sampling
     l=[]
     minimum=np.inf
@@ -223,11 +240,19 @@ def sync_voltage(table1,table2,num_of_samples):#num_of_samples will be between 1
             if x<minimum:
                     minimum=x
                     indexes=(i,j)
-    return indexes
+    return indexes'''
     
 
 def plot_graph(tableName, dic, parameterlst,dates=False,init_index=0,fin_index=-1, voltage=230):
-    #better use Power1 instead of P1 for displaying, as it is more accurate
+    '''returns the plot of our samples:
+        tableName- is the table from which to take the samples
+        dic- the dictionary in which the table exist
+        parameterlst- list of all different samples titles that will be plotted (for power use Power#)
+        dates- whether to present the x axis as time or as indices
+        init_index- first sample to start from, if dates is true then initial hour as string format
+        init_index- last sample to end with, if dates is true then final hour as string format
+        voltage- the base voltage in the house, used only if Power is in parameterlst
+        '''
     if(isinstance(init_index,str) and dates==True):
         t0=dt.datetime.strptime(init_index,"%H:%M:%S").time()
         t0=dt.datetime.combine(dt.date.today(), t0)
@@ -286,13 +311,25 @@ def plot_graph(tableName, dic, parameterlst,dates=False,init_index=0,fin_index=-
                 samples=np.array(samples)*(voltage/1000)
             else:
                 samples=dic[tableName][parameterName][init_index:fin_index]
+            
             plt.plot(samples,label=parameterName)
     plt.legend()
+    #plt.ylabel('KW')
     #plt.savefig("plots/general_graphs/"+tableName+" PAR="+str(parameterlst)+".png", format="png")
     plt.show()
  
     
 def plot_devices_graph(list_devices,devices_indices,devices_names,UD1,UD2,UD3,dates=False,init_index=0,fin_index=-1, voltage=230):
+    '''returns the plot of our samples based on the system:
+        list_devices- list of all our devices
+        devices_indices- indices of devices we want to plot
+        devices_names- names of devices we want to appear in legend, same order as devices_indices
+        UD1,UD2,UD3- lists of all the events that we detected based on the phase
+        dates- whether to present the x axis as time or as indices
+        init_index- first sample to start from, if dates is true then initial hour as string format
+        init_index- last sample to end with, if dates is true then final hour as string format
+        voltage- the base voltage in the house, used only if Power is in parameterlst
+        '''   
     #list devices is the list with all the devices with their data
     #devices indices is the devices we want to print for- exmaple [0,6,7]
     day=dt.datetime.strptime(UD1[0][0],"%m/%d/%y  %H:%M:%S.%f")
@@ -337,12 +374,21 @@ def plot_devices_graph(list_devices,devices_indices,devices_names,UD1,UD2,UD3,da
         plt.plot(x_dates,samples[ind]*(voltage/1000),label=devices_names[cnt])
         cnt+=1
     plt.legend()
+    plt.ylabel('KW')
     #plt.savefig("plots/general_graphs/"+tableName+" PAR="+str(parameterlst)+".png", format="png")
     plt.show()   
     
 
 
 def plotTotalCost(list_devices,devices_indices, voltage=230, price=0.5, currency_name='USD', months=12):
+    '''returns the plot of our cost based on the system analysis:
+        list_devices- list of all our devices
+        devices_indices- indices of devices we want to plot
+        voltage- the base voltage in the house, used only if Power is in parameterlst
+        price- price of 1kwh
+        currency_name- name of the currency
+        months- total of months back to show in the graph
+        '''   
     #display the data from the last year 
     start=dt.datetime.today()
     last_months=[]
@@ -383,15 +429,15 @@ def plotTotalCost(list_devices,devices_indices, voltage=230, price=0.5, currency
     
 
 
-def plot_power_graph(tableName):
+'''def plot_power_graph(tableName):
     plt.title("power graph: "+tableName)
     plt.plot(dictionary[tableName]["kW"],label="kW")
     plt.plot(dictionary[tableName]["kvar"],label="kvar")
     plt.legend()
     plt.savefig("plots/time/"+tableName+".png", format="png")
-    plt.show()
+    plt.show()'''
     
-def plot_power_graph_spectrum(tableName):
+'''def plot_power_graph_spectrum(tableName):
     plt.title("power graph spectrum: "+tableName)
     plt.yscale('log')
     #print(np.abs(np.fft.fft(dictionary[tableName]["kW"]))[0])
@@ -400,9 +446,9 @@ def plot_power_graph_spectrum(tableName):
     plt.legend()
     
     plt.savefig("plots/spectrum/"+tableName+".png", format="png")
-    plt.show()
+    plt.show()'''
 
-def plot_power_graph2(tableName1,tableName2):
+'''def plot_power_graph2(tableName1,tableName2):
     #plt.title("power graphs: "+tableName1+" "+tableName2)
     fig, [ax1, ax2] = plt.subplots(2, 1)
     ax1.set_title(tableName1)
@@ -414,10 +460,10 @@ def plot_power_graph2(tableName1,tableName2):
     ax1.legend()
     ax2.legend()
     #plt.savefig("plots/time/"+tableName+".png", format="png")
-    fig.show()
+    fig.show()'''
 
 
-def dft_vector(vector):
+'''def dft_vector(vector):
     return np.abs(np.fft.fft(vector))
 
 def l1_distance(v1,v2):
@@ -430,52 +476,51 @@ def diff_l2based(table1,table2):
       return l2_distance(dft_vector(table1),dft_vector(table2))
 def diff_l1based(table1,table2):
       return l1_distance(dft_vector(table1),dft_vector(table2))
+'''
 
 
+'''def find_edges(table, threshold, positive_flag, negative_flag):
 
-def find_edges(table, threshold, positive_flag, negative_flag):
-    #threshhold is relative to table values
-    #positive flag is for positive gradients
-    #negative flag is for negative gradients
     t_arr=list()
     for t in range(1,len(table)):
         if(positive_flag and table[t]-table[t-1]>=threshold*table[t]):
             t_arr.append(t)
         elif(negative_flag and table[t-1]-table[t]>=threshold*table[t]):
             t_arr.append(t)
-    return t_arr
+    return t_arr'''
 
 
-def already_exist_at_dist(indices,ind,threshold):
+'''def already_exist_at_dist(indices,ind,threshold):
     for i in indices:
         if (i-ind)**2<=threshold**2:
             return True
-    return False
+    return False'''
 
 
-def already_exist_at_dist2(edges_pairs,pair,threshold):
+'''def already_exist_at_dist2(edges_pairs,pair,threshold):
     for pair2 in edges_pairs:
         if (pair[0]-pair2[0])**2<=threshold**2 and pair[0]>pair2[0] and pair[1]==pair2[1]: 
             return True
-    return False
+    return False'''
 
-def edges_cleaner(indices,threshold):
+'''def edges_cleaner(indices,threshold):
     new_indices=list()
     for ind in indices:
         if (already_exist_at_dist(new_indices,ind,threshold)==False):
             new_indices.append(ind)
-    return new_indices
+    return new_indices'''
 
 
-def edges_cleaner2(edges_pairs,threshold):
+'''def edges_cleaner2(edges_pairs,threshold):
+    
     new_pairs=list()
     for pair in edges_pairs:
         if (already_exist_at_dist2(edges_pairs,pair,threshold)==False):
             new_pairs.append(pair)
-    return new_pairs
+    return new_pairs'''
 
 
-def find_edges_abs(table, threshold, positive_flag, negative_flag):
+'''def find_edges_abs(table, threshold, positive_flag, negative_flag):
     #threshhold is relative to table values
     #positive flag is for positive gradients
     #negative flag is for negative gradients
@@ -485,14 +530,19 @@ def find_edges_abs(table, threshold, positive_flag, negative_flag):
             t_arr.append(t)
         elif(negative_flag and table[t-1]-table[t]>=threshold):
             t_arr.append(t)
-    return t_arr
+    return t_arr'''
 
 
 def find_edges_abs_plus_size(table, threshold, positive_flag=True, negative_flag=True):
-    #threshhold is relative to table values
-    #positive flag is for positive gradients
-    #negative flag is for negative gradients
-
+    '''
+    finds indices and sizes (tuple) of all edges in the table:
+        
+    table is the table to which to find the edges from
+    threshhold is the absolute threshold to pick
+    positive flag is whether to include positive gradients
+    negative flag is whether to include negative gradients
+    '''
+    
     t_arr=list()
     for t in range(1,len(table)):
         if(positive_flag and table[t]-table[t-1]>=threshold):
@@ -503,23 +553,30 @@ def find_edges_abs_plus_size(table, threshold, positive_flag=True, negative_flag
 
 
 def sublist(lst,indices):
+    '''slices the list into given indices'''
     ls=list()
     for ind in indices:
         ls.append(lst[ind])
     return ls
 
 def timestamps_to_strings(dic,indices):
+    '''takes a table with times column and takes indices and returns all the times in these indices'''
     times=sublist(dic["StringTime"],indices)
     return times
     
 def timestamps_to_strings2(dic,pairs_arr):
+    '''takes a table with times column and takes (index,size) array and returns the (time,size,index) array'''
     times=sublist(dic["StringTime"],[x[0] for x in pairs_arr])
     return [[times[i],pairs_arr[i][1],pairs_arr[i][0]] for i in range(len(times))]
 
 
 def up_down_connector(pairs_arr,threshold_size=0,epsilon=0):
-    #gets an array with elements of format ('time',edge size)
-    #first element is just an array with all the non-pairs for efficient computation
+    '''
+    detects events by connection negative gradients edges to positive gradients edges of the same magnitude
+    pairs_arr- an array with elements of format ('time',edge size)
+    threshold_size- threshold to what counts as the minimal magnitude to count as an event
+    epsilon- epsilon is the maximum distance between the absoulute value of the 2 edges
+    '''
     res=[[]]
     i=0
     while(i<len(pairs_arr)-1):
@@ -551,10 +608,24 @@ def up_down_connector(pairs_arr,threshold_size=0,epsilon=0):
                 res[0].append([pairs_arr[i][0],pairs_arr[i][1],pairs_arr[i][2]]) #add
         i+=1
     return res
-                
+
+def addNonPairs(pairs,nonpairs,timestamp,last_index):
+    '''function that fixes all the positive gradient edges that found no negative gradients ones (mostly still they are still running)'''
+    t_last=dt.datetime.strptime(timestamp, '%m/%d/%y  %H:%M:%S.%f')
+    for ele in nonpairs:
+        t = dt.datetime.strptime(ele[0], '%m/%d/%y  %H:%M:%S.%f')
+        pairs.append([ele[0],timestamp,ele[1],-ele[1],t_last-t,ele[2],last_index])
+    return 0                
 
 
 def filter_duration(tensor, index_time,min_time_seconds,max_time_seconds):
+    '''
+    filter the amount of seconds an event lasts
+    tensor-input tensor
+    index_time- the index in the tensor that represents the time
+    min_time_seconds- minimum time for an event
+    max_time_seconds - maximum time for an event
+    '''
     min_t=dt.timedelta(0,min_time_seconds)
     max_t=dt.timedelta(0,max_time_seconds)
     res=[]
@@ -565,6 +636,9 @@ def filter_duration(tensor, index_time,min_time_seconds,max_time_seconds):
             
       
 def THD_avg_add(tensor,THD_dict):
+    '''
+    calculates the average THD over a period of an event
+    '''
     res=list()
     for vec in tensor:
         i1=vec[-2]
@@ -578,7 +652,10 @@ def THD_avg_add(tensor,THD_dict):
     
     
 def get_time_difference(t1_str,t2_str):
-    #returns the time difference of the hour of the day, independent of the date it was on
+    '''
+    returns the time difference of the hour of the day, independent of the date it was on
+    takes as input 2 strings that represent time
+    '''
     a=dt.datetime.combine(dt.date.today(),dt.datetime.strptime(t1_str, '%m/%d/%y  %H:%M:%S.%f').time())
     b=dt.datetime.combine(dt.date.today(),dt.datetime.strptime(t2_str, '%m/%d/%y  %H:%M:%S.%f').time())
     time_diff=min(abs(a-b),abs(a-b+ dt.timedelta(days=1)))
@@ -587,11 +664,14 @@ def get_time_difference(t1_str,t2_str):
     
 
 def time_score(t1_str,t2_str):
-    #returns the score that 2 devices recieve based on the hour of the day
-    #minimum score 0
-    #maximum score 36
-    #time_diff of 1 second score is 20
-    #time_diff of 1 hour score is 32
+    '''
+    returns the score that 2 devices recieve based on the hour of the day,
+    It finds the minimum amount of division of 12 hours, until we reach a period smaller than the difference between them
+    minimum score 0 (12 hours difference)
+    maximum score 36 (t1 equals to t2)
+    time_diff of 1 second score is 20
+    time_diff of 1 hour score is 32
+    '''
     time_diff=get_time_difference(t1_str,t2_str)
     initial=dt.timedelta(hours=12)
     score=0
@@ -604,18 +684,24 @@ def time_score(t1_str,t2_str):
 
 
 class Device():
+    '''
+    class that represents a device
+    '''
     def __init__(self,current,current_THD,start_time_arr=[],end_time_arr=[],phase=[1,0,0],phase_static=False):
-        self.current=current
-        self.current_THD=current_THD
-        self.num_apperances=1
+        self.current=current #current
+        self.current_THD=current_THD #total harmonic distortion current
+        self.num_apperances=1 #number of apperances detected
         self.start_time_arr=start_time_arr #start times of device in array
-        self.end_time_arr=end_time_arr
+        self.end_time_arr=end_time_arr  #end times of device in array
         self.fixed_power=True #whether the power is constant or changing over time
         self.phase=phase #whether the power is constant or changing over time
-        self.phase_static=phase_static
+        self.phase_static=phase_static #flag whether the device is static in phase
         
         
     def similar(self,dev2,eps_curr,eps_THD):
+        '''
+        old similarity that returns True if the device is similiar to dev2 based on a few thresholds
+        '''
         if(dev2.phase_static==True and sum([1 if (self.phase[i]+dev2.phase[i])>0 else 0 for i in range(len(dev2.phase))]))>1:
             #if it is on the same phase all the time and the new device is from another phase
             return False
@@ -628,6 +714,11 @@ class Device():
     
         
     def similarGrade(self,dev2):
+        '''
+        new similarity that returns a score if the device is similiar to dev2 based on similarity in parameters
+        highest score is 100 (unlikely to reach, 70-80 is close enough)
+        lowest is 0
+        '''
         grade=0
         alpha=[6,3,0.5,0.5]
         grade+=alpha[0]*max(5-abs(self.current-dev2.current),0)
@@ -658,6 +749,7 @@ class Device():
         return grade/sum(alpha)*20
 
     def update(self,dev2):
+        #updates the devices with dev2 parameters
         n=self.num_apperances
         self.current=(self.current*n+dev2.current)/(n+1)
         self.current_THD=(self.current_THD*n+dev2.current_THD)/(n+1)
@@ -667,27 +759,25 @@ class Device():
         self.phase[2]+=dev2.phase[2]
     
     def add_start_time(self,start_time):
+        #add an additional start time
         self.start_time_arr.append(start_time)
     def add_end_time(self,end_time):
+        #add an additional end time
         self.end_time_arr.append(end_time)
     
 
 def print_tensor(tensor):
+    '''function that prints a tensor in an easy to read format'''
     for vec in tensor:
         print("Start: %s || End: %s || Device: %d"%(vec[0],vec[1],vec[-1]))
 
 
 def print_devices(list_devs):
+    '''function that prints list of devices in an easy to read format'''
     for i,dev in enumerate(list_devs):
         print("DEV #%d: curr:%f, curr_THD:%f, Phase:[%d,%d,%d]:"%(i,dev.current,dev.current_THD,dev.phase[0],dev.phase[1],dev.phase[2]))
 
 
-def addNonPairs(pairs,nonpairs,timestamp,last_index):
-    t_last=dt.datetime.strptime(timestamp, '%m/%d/%y  %H:%M:%S.%f')
-    for ele in nonpairs:
-        t = dt.datetime.strptime(ele[0], '%m/%d/%y  %H:%M:%S.%f')
-        pairs.append([ele[0],timestamp,ele[1],-ele[1],t_last-t,ele[2],last_index])
-    return 0
 
 if __name__ == "__main__":
     
@@ -767,9 +857,14 @@ if __name__ == "__main__":
     
     #print("I1 Edges timestamps:",timestamps_to_strings2(dictionary_2days["Administrato_output1_table2"],edges_cleaner2(find_edges_abs_plus_size(dictionary_2days["Administrato_output1_table2"]["I1"],0.5,positive_flag=True,negative_flag=True),0)))
     #print("I3 Edges timestamps:",timestamps_to_strings2(dictionary_2days["Administrato_output1_table2"],edges_cleaner2(find_edges_abs_plus_size(dictionary_2days["Administrato_output1_table2"]["I3"],0.5,positive_flag=True,negative_flag=True),0)))
-    M1=timestamps_to_strings2(dictionary_2days["Administrato_output1_table%d"%tablenum],edges_cleaner2(find_edges_abs_plus_size(dictionary_2days["Administrato_output1_table%d"%tablenum]["I1"],0.5),0))
-    M2=timestamps_to_strings2(dictionary_2days["Administrato_output1_table%d"%tablenum],edges_cleaner2(find_edges_abs_plus_size(dictionary_2days["Administrato_output1_table%d"%tablenum]["I2"],0.5),0))
-    M3=timestamps_to_strings2(dictionary_2days["Administrato_output1_table%d"%tablenum],edges_cleaner2(find_edges_abs_plus_size(dictionary_2days["Administrato_output1_table%d"%tablenum]["I3"],0.5),0))
+    #M1=timestamps_to_strings2(dictionary_2days["Administrato_output1_table%d"%tablenum],edges_cleaner2(find_edges_abs_plus_size(dictionary_2days["Administrato_output1_table%d"%tablenum]["I1"],0.5),0))
+    #M2=timestamps_to_strings2(dictionary_2days["Administrato_output1_table%d"%tablenum],edges_cleaner2(find_edges_abs_plus_size(dictionary_2days["Administrato_output1_table%d"%tablenum]["I2"],0.5),0))
+    #M3=timestamps_to_strings2(dictionary_2days["Administrato_output1_table%d"%tablenum],edges_cleaner2(find_edges_abs_plus_size(dictionary_2days["Administrato_output1_table%d"%tablenum]["I3"],0.5),0))
+    
+    
+    M1=timestamps_to_strings2(dictionary_2days["Administrato_output1_table%d"%tablenum],(find_edges_abs_plus_size(dictionary_2days["Administrato_output1_table%d"%tablenum]["I1"],0.5)))
+    M2=timestamps_to_strings2(dictionary_2days["Administrato_output1_table%d"%tablenum],(find_edges_abs_plus_size(dictionary_2days["Administrato_output1_table%d"%tablenum]["I2"],0.5)))
+    M3=timestamps_to_strings2(dictionary_2days["Administrato_output1_table%d"%tablenum],(find_edges_abs_plus_size(dictionary_2days["Administrato_output1_table%d"%tablenum]["I3"],0.5)))
     #print("up_down_connector M1 : ",up_down_connector(M1,2,1))
     #print("up_down_connector M2 : ",up_down_connector(M2,2,1))
     #print("up_down_connector M3 : ",up_down_connector(M3,2,1))
