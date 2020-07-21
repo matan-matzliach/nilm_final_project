@@ -9,17 +9,17 @@ Non Intrusive Load Monitoring (NILM) is a method in which a meter gathers sample
 
 This repository consists of a server that runs a solution to the NILM problem and an android app that interacts with the user.
 
-Graph of grid total power as a function of time (phase number 1):
+<b>Graph of grid total power as a function of time (phase number 1):</b>
 
 <img src="https://i.ibb.co/xmxNtFs/image.png" width="500" title="hover text">
 
 
-Graph of all phase 1 devices power that the system detected:
+<b>Graph of all phase 1 devices power that the system detected:</b>
 
 <img src="https://i.ibb.co/sJn5pYs/image.png" width="500" title="hover text">
 
 
-Homepage of the app:
+<b>Homepage of the app:</b>
 
 <img src="https://i.ibb.co/h90WqS1/mainmaenu.png" width="300" height="500" title="hover text">
 
