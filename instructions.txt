@@ -1,0 +1,10 @@
+In order to use our project you need to execute the following steps:
+  on your computer:
+  1) run PAS software on your computer in order to get the data from the smart meter and save the output of the software as MDB that will be updated automatically.
+  2) run mdb_to_csv_macro.exe
+  3) run low_parser_server.py
+  4)go to CMD (in windows computers) or to terminal (in mac or linux) and run the command ipconfig (in windows computers) or ifconfig (in mac or linux) and retrieve the ipv4 address of your computer.
+  on your android phone:
+  5)install on your android device the "nilm app.apk" file from the folder android application.
+  6)go to settings and change the ip address to the ipv4 address you got in stage 4.
+  7)now the app is working and you can use it.
