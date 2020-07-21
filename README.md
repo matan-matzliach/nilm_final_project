@@ -2,7 +2,7 @@
 
 Non Intrusive Load Monitoring (NILM) is a method in which a meter gathers samples of the total grid and tries to detect what devices or appliances are on the grid, while seperating the consuption that each of them takes. 
 
-Project poster:
+<b>Project poster: </b>
 
 <img src="https://raw.githubusercontent.com/matan-matzliach/nilm_final_project/master/poster.PNG" height="750" title="hover text">
 
