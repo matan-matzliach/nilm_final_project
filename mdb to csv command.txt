@@ -1,5 +1,0 @@
-curl --form files[]=@1.mdb "https://www.rebasedata.com/api/v1/convert?outputFormat=csv&errorResponse=zip" -o output.zip
-
-
-there is also this website that you can download all tables as csv files as a zip
-https://www.mdbopener.com/
