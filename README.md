@@ -6,7 +6,7 @@ This repository consists of a server that runs a solution to the NILM problem an
 
 <b>Project poster: </b>
 
-<img src="https://raw.githubusercontent.com/matan-matzliach/nilm_final_project/master/poster.PNG" title="hover text">
+<img src="https://raw.githubusercontent.com/matan-matzliach/nilm_final_project/master/project_presentation/poster.PNG" title="hover text">
 
 <b>Graph of grid total power as a function of time (phase number 1):</b>
 
