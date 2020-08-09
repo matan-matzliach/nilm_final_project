@@ -1,22 +1,14 @@
 import pandas as pd
 from dateutil.relativedelta import relativedelta
-import sys
 import os
 import csv
 import numpy as np
 import matplotlib.pyplot as plt
-import math
-import time
 import datetime as dt
-import matplotlib
-matplotlib.use('Agg')
 import matplotlib.dates as md
 from flask import Flask,request,render_template,Response,send_file,jsonify
-import random
-import io
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 from matplotlib.figure import Figure
-import threading
 from OpenSSL import SSL
 import socket
 
@@ -615,7 +607,7 @@ app=Flask(__name__) #setup the application
 #this function tries to detect new devices in the network
 def form():
     i=0
-    while(i<150):#delay to make the line "device added succesfully apear longer"
+    while(i<1000):#delay to make the line "device added succesfully apear longer"
         i+=1
     max_grade_arr=[70,75,70]
     #print(UD_arr)
@@ -795,7 +787,7 @@ def graph_form_post_cost():
     #print_tensor(UD3)
     return jsonify({})
 if __name__ == "__main__":
-    print("for first time usage you need to go to settings in the app and change the ip address there to: "+socket.gethostbyname(socket.gethostname())+"\n\n\n\n\n")
+    print("for first time usage you need to go to settings in the app and change the ip address there to: "+str(socket.gethostbyname_ex(socket.gethostname())[2])+"\nnotice: if you receive more than one IP address it means that the server is in one of those please try them until you find the correct one.\n\n\n\n")
     stored=[[],[]]
     tablenum=2
     parse_all_data(dictionary,dictionary_2days)
